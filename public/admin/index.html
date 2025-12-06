@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - DANISA SHOP</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #000;
+      --secondary: #f5f5f5;
+      --accent: #ff6b6b;
+      --text: #333;
+      --border: #e0e0e0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--secondary);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 24px;
+    }
+
+    .auth-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .auth-input {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin: 5px;
+      font-size: 14px;
+    }
+
+    .auth-btn {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .auth-btn:hover {
+      background: #ff5252;
+    }
+
+    .logout-btn {
+      background: #666;
+    }
+
+    .logout-btn:hover {
+      background: #555;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .tab-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-section {
+      background: var(--secondary);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .submit-btn {
+      background: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent);
+    }
+
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .data-list {
+      margin-top: 20px;
+    }
+
+    .data-item {
+      background: var(--secondary);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .data-item-info {
+      flex: 1;
+    }
+
+    .data-item-name {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .data-item-meta {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .data-item-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .delete-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .delete-btn:hover {
+      background: #ff5252;
+    }
+
+    .edit-btn {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .product-images {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 6px;
+      border: 2px dashed var(--border);
+    }
+
+    .image-preview {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .image-thumb {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .image-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-thumb-delete {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .orders-list {
+      overflow-x: auto;
+    }
+
+    .order-row {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .order-id {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .order-status {
+      background: #4caf50;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .order-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .order-info-item {
+      padding: 8px;
+      background: var(--secondary);
+      border-radius: 4px;
+    }
+
+    .order-info-label {
+      font-weight: 600;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .order-items {
+      background: var(--secondary);
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .order-item {
+      margin-bottom: 5px;
+      padding: 5px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+    }
+
+    .success-message {
+      background: #4caf50;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .error-message {
+      background: #f44336;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        flex-direction: column;
+      }
+
+      .order-info {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <div class="header">
+      <div>
+        <h1>⚙️ Admin Panel</h1>
+        <p style="font-size: 12px; margin-top: 5px;">DANISA SHOP Management</p>
+      </div>
+      <div id="userInfo" style="text-align: right;">
+        <button class="auth-btn logout-btn" onclick="logout()">Выход</button>
+      </div>
+    </div>
+
+    <!-- AUTH SECTION -->
+    <div class="auth-section" id="authSection">
+      <h3>Введите пароль администратора</h3>
+      <input type="password" class="auth-input" id="adminPassword" placeholder="Пароль">
+      <button class="auth-btn" onclick="login()">Вход</button>
+    </div>
+
+    <!-- MAIN CONTENT (hidden until logged in) -->
+    <div id="mainContent" style="display: none;">
+      <!-- SUCCESS/ERROR MESSAGES -->
+      <div class="success-message" id="successMessage"></div>
+      <div class="error-message" id="errorMessage"></div>
+
+      <!-- STATS -->
+      <div class="stats" id="statsSection" style="display: none;">
+        <div class="stat-card">
+          <div class="stat-value" id="totalOrders">0</div>
+          <div class="stat-label">Заказов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalProducts">0</div>
+          <div class="stat-label">Товаров</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalRevenue">0₽</div>
+          <div class="stat-label">Сумма заказов</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('categories')">Категории</button>
+        <button class="tab-btn" onclick="showTab('subcategories')">Подкатегории</button>
+        <button class="tab-btn" onclick="showTab('products')">Товары</button>
+        <button class="tab-btn" onclick="showTab('orders')">Заказы</button>
+      </div>
+
+      <!-- CATEGORIES TAB -->
+      <div class="tab-content active" id="categoriesTab">
+        <h2>Управление категориями</h2>
+        <div class="form-section">
+          <div class="form-group">
+            <label>Название категории</label>
+            <input type="text" id="categoryName" placeholder="Например: Куртки">
+          </div>
+          <button class="submit-btn" onclick="createCategory()">Добавить категорию</button>
+        </div>
+        <div class="data-list" id="categoriesList"></div>
+      </div>
+
+      <!-- SUBCATEGORIES TAB -->
+      <div class="tab-content" id="subcategoriesTab">
+        <h2>Управление подкатегориями</h2>
+        <div class="form-section">
+          <div class="form-group">
+            <label>Категория</label>
+            <select id="subcategoryCategory">
+              <option value="">Выберите категорию</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Название подкатегории</label>
+            <input type="text" id="subcategoryName" placeholder="Например: Stone Island">
+          </div>
+          <button class="submit-btn" onclick="createSubcategory()">Добавить подкатегорию</button>
+        </div>
+        <div class="data-list" id="subcategoriesList"></div>
+      </div>
+
+      <!-- PRODUCTS TAB -->
+      <div class="tab-content" id="productsTab">
+        <h2>Управление товарами</h2>
+        <div class="form-section">
+          <div class="form-group">
+            <label>Подкатегория</label>
+            <select id="productSubcategory">
+              <option value="">Выберите подкатегорию</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Название товара</label>
+            <input type="text" id="productName" placeholder="Например: Puffer Jacket">
+          </div>
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea id="productDescription" placeholder="Описание товара..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Цена (₽)</label>
+              <input type="number" id="productPrice" placeholder="0" min="0" step="0.01">
+            </div>
+          </div>
+          <button class="submit-btn" onclick="createProduct()">Добавить товар</button>
+        </div>
+        <div class="data-list" id="productsList"></div>
+      </div>
+
+      <!-- ORDERS TAB -->
+      <div class="tab-content" id="ordersTab">
+        <h2>Заказы</h2>
+        <div class="orders-list" id="ordersList">
+          <div class="loading">Загрузка заказов...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let adminPassword = null;
+    let adminTelegramId = null;
+    let allCategories = [];
+    let allSubcategories = [];
+    let allProducts = [];
+
+    // Initialize Telegram Web App if available
+    if (window.Telegram && window.Telegram.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      webApp.ready();
+      
+      if (webApp.initDataUnsafe && webApp.initDataUnsafe.user) {
+        adminTelegramId = webApp.initDataUnsafe.user.id;
+        // Auto-login if admin ID matches
+        if (adminTelegramId && (adminTelegramId === 7855745005 || localStorage.getItem('isAdmin'))) {
+          localStorage.setItem('isAdmin', 'true');
+          showMainContent();
+        }
+      }
+    }
+
+    // Check if already authenticated
+    if (localStorage.getItem('isAdmin') === 'true') {
+      showMainContent();
+    } else {
+      const storedPassword = localStorage.getItem('adminPassword');
+      if (storedPassword) {
+        adminPassword = storedPassword;
+        showMainContent();
+      }
+    }
+
+    function login() {
+      const password = document.getElementById('adminPassword').value;
+      if (!password) {
+        showError('Введите пароль');
+        return;
+      }
+      adminPassword = password;
+      localStorage.setItem('adminPassword', password);
+      localStorage.setItem('isAdmin', 'true');
+      document.getElementById('adminPassword').value = '';
+      showMainContent();
+    }
+
+    function logout() {
+      adminPassword = null;
+      adminTelegramId = null;
+      localStorage.removeItem('adminPassword');
+      localStorage.removeItem('isAdmin');
+      document.getElementById('authSection').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'none';
+    }
+
+    function showMainContent() {
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      loadAllData();
+    }
+
+    async function loadAllData() {
+      try {
+        const [catsRes, subRes, proRes, ordRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/subcategories'),
+          fetch('/api/products'),
+          fetch(`/api/orders?password=${adminPassword}`)
+        ]);
+
+        allCategories = await catsRes.json();
+        allProducts = await proRes.json();
+
+        // Load subcategories
+        allSubcategories = [];
+        for (const cat of allCategories) {
+          const res = await fetch(`/api/subcategories/${cat.id}`);
+          const data = await res.json();
+          allSubcategories.push(...data);
+        }
+
+        const orders = await ordRes.json();
+
+        renderCategories();
+        renderSubcategories();
+        renderProducts();
+        renderOrders(orders);
+        updateStats(orders);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showError('Ошибка загрузки данных');
+      }
+    }
+
+    function updateStats(orders) {
+      const totalOrders = orders.length || 0;
+      const totalProducts = allProducts.length || 0;
+      const totalRevenue = orders.reduce((sum, o) => sum + (o.total_price || 0), 0) || 0;
+
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('totalProducts').textContent = totalProducts;
+      document.getElementById('totalRevenue').textContent = `${totalRevenue}₽`;
+      document.getElementById('statsSection').style.display = 'grid';
+    }
+
+    async function createCategory() {
+      const name = document.getElementById('categoryName').value.trim();
+      if (!name) {
+        showError('Введите название');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, password: adminPassword })
+        });
+
+        if (res.ok) {
+          document.getElementById('categoryName').value = '';
+          showSuccess('Категория добавлена');
+          loadAllData();
+        } else {
+          showError('Ошибка при добавлении');
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    function renderCategories() {
+      const list = document.getElementById('categoriesList');
+      if (allCategories.length === 0) {
+        list.innerHTML = '<div class="loading">Нет категорий</div>';
+        return;
+      }
+
+      list.innerHTML = allCategories.map(cat => `
+        <div class="data-item">
+          <div class="data-item-info">
+            <div class="data-item-name">${cat.name}</div>
+          </div>
+          <div class="data-item-actions">
+            <button class="delete-btn" onclick="deleteCategory(${cat.id})">Удалить</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Update subcategory select
+      const select = document.getElementById('subcategoryCategory');
+      select.innerHTML = '<option value="">Выберите категорию</option>' +
+        allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    async function deleteCategory(id) {
+      if (!confirm('Удалить эту категорию?')) return;
+
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword })
+        });
+
+        if (res.ok) {
+          showSuccess('Категория удалена');
+          loadAllData();
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    async function createSubcategory() {
+      const categoryId = document.getElementById('subcategoryCategory').value;
+      const name = document.getElementById('subcategoryName').value.trim();
+
+      if (!categoryId || !name) {
+        showError('Выберите категорию и введите название');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/subcategories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ categoryId, name, password: adminPassword })
+        });
+
+        if (res.ok) {
+          document.getElementById('subcategoryName').value = '';
+          showSuccess('Подкатегория добавлена');
+          loadAllData();
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    function renderSubcategories() {
+      const list = document.getElementById('subcategoriesList');
+      if (allSubcategories.length === 0) {
+        list.innerHTML = '<div class="loading">Нет подкатегорий</div>';
+        return;
+      }
+
+      list.innerHTML = allSubcategories.map(subcat => {
+        const cat = allCategories.find(c => c.id === subcat.category_id);
+        return `
+          <div class="data-item">
+            <div class="data-item-info">
+              <div class="data-item-name">${subcat.name}</div>
+              <div class="data-item-meta">Категория: ${cat?.name || 'Неизвестно'}</div>
+            </div>
+            <div class="data-item-actions">
+              <button class="delete-btn" onclick="deleteSubcategory(${subcat.id})">Удалить</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Update product subcategory select
+      const select = document.getElementById('productSubcategory');
+      select.innerHTML = '<option value="">Выберите подкатегорию</option>' +
+        allSubcategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    }
+
+    async function deleteSubcategory(id) {
+      if (!confirm('Удалить эту подкатегорию?')) return;
+
+      try {
+        const res = await fetch(`/api/subcategories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword })
+        });
+
+        if (res.ok) {
+          showSuccess('Подкатегория удалена');
+          loadAllData();
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    async function createProduct() {
+      const subcategoryId = document.getElementById('productSubcategory').value;
+      const name = document.getElementById('productName').value.trim();
+      const description = document.getElementById('productDescription').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+
+      if (!subcategoryId || !name || !price) {
+        showError('Заполните все поля');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subcategoryId, name, description, price, password: adminPassword })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('productName').value = '';
+          document.getElementById('productDescription').value = '';
+          document.getElementById('productPrice').value = '';
+          showSuccess('Товар добавлен');
+          loadAllData();
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    function renderProducts() {
+      const list = document.getElementById('productsList');
+      if (allProducts.length === 0) {
+        list.innerHTML = '<div class="loading">Нет товаров</div>';
+        return;
+      }
+
+      list.innerHTML = allProducts.map(product => {
+        const subcat = allSubcategories.find(s => s.id === product.subcategory_id);
+        return `
+          <div class="data-item">
+            <div class="data-item-info">
+              <div class="data-item-name">${product.name}</div>
+              <div class="data-item-meta">
+                ${subcat?.name || 'Неизвестно'} • ${product.price}₽
+              </div>
+              ${product.main_image ? `<div style="margin-top: 8px;"><img src="${product.main_image}" style="max-width: 100px; height: 80px; object-fit: cover; border-radius: 4px;"></div>` : ''}
+            </div>
+            <div class="data-item-actions">
+              <button class="edit-btn" onclick="editProduct(${product.id})">Фото</button>
+              <button class="delete-btn" onclick="deleteProduct(${product.id})">Удалить</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function editProduct(productId) {
+      const product = allProducts.find(p => p.id === productId);
+      if (!product) return;
+
+      const imageUrl = prompt('Введите URL изображения или используйте кнопку загрузки ниже.\n\nДля загрузки файла используйте форму ниже:');
+      if (imageUrl) {
+        uploadProductImage(productId, imageUrl);
+      }
+
+      // Show image upload form
+      setTimeout(() => {
+        const formHtml = `
+          <div class="product-images">
+            <h3>Загрузить изображение для товара "${product.name}"</h3>
+            <form onsubmit="handleImageUpload(event, ${productId})" enctype="multipart/form-data">
+              <div class="form-group">
+                <label>Выберите изображение</label>
+                <input type="file" id="imageFile${productId}" accept="image/*" required>
+              </div>
+              <div class="form-group">
+                <label>
+                  <input type="checkbox" id="isMainImage${productId}"> Использовать как главное изображение
+                </label>
+              </div>
+              <button type="submit" class="submit-btn">Загрузить</button>
+            </form>
+          </div>
+        `;
+
+        // Insert form after product item
+        const items = document.querySelectorAll('.data-item');
+        items.forEach((item, idx) => {
+          const id = parseInt(item.innerHTML.match(/editProduct\((\d+)\)/)[1]);
+          if (id === productId) {
+            item.insertAdjacentHTML('afterend', formHtml);
+          }
+        });
+      }, 100);
+    }
+
+    function handleImageUpload(event, productId) {
+      event.preventDefault();
+
+      const fileInput = document.getElementById(`imageFile${productId}`);
+      const isMain = document.getElementById(`isMainImage${productId}`).checked;
+
+      if (!fileInput.files[0]) {
+        showError('Выберите файл');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+      formData.append('password', adminPassword);
+      formData.append('isMain', isMain);
+
+      fetch(`/api/products/${productId}/upload-image`, {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          showSuccess('Изображение загружено');
+          loadAllData();
+        })
+        .catch(error => showError('Ошибка: ' + error.message));
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Удалить этот товар?')) return;
+
+      try {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: adminPassword })
+        });
+
+        if (res.ok) {
+          showSuccess('Товар удален');
+          loadAllData();
+        }
+      } catch (error) {
+        showError('Ошибка: ' + error.message);
+      }
+    }
+
+    function renderOrders(orders) {
+      const list = document.getElementById('ordersList');
+
+      if (!orders || orders.length === 0) {
+        list.innerHTML = '<div class="loading">Нет заказов</div>';
+        return;
+      }
+
+      list.innerHTML = orders.map(order => `
+        <div class="order-row">
+          <div class="order-header">
+            <span class="order-id">Заказ #${order.id}</span>
+            <span class="order-status">${order.status}</span>
+          </div>
+          <div class="order-info">
+            <div class="order-info-item">
+              <div class="order-info-label">Пользователь</div>
+              <strong>@${order.username}</strong>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Контакт</div>
+              <strong>${order.contact}</strong>
+            </div>
+            <div class="order-info-item">
+              <div class="order-info-label">Сумма</div>
+              <strong>${order.total_price}₽</strong>
+            </div>
+          </div>
+          <div class="order-items">
+            <strong>Товары:</strong>
+            ${renderOrderItems(order.items_json)}
+          </div>
+          <div style="font-size: 12px; color: #999; margin-top: 10px;">
+            ${new Date(order.created_at).toLocaleString('ru-RU')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderOrderItems(itemsJson) {
+      try {
+        const items = JSON.parse(itemsJson);
+        return items.map((item, idx) => `
+          <div class="order-item">
+            ${idx + 1}. ${item.name} x${item.quantity} = ${item.price * item.quantity}₽
+          </div>
+        `).join('');
+      } catch {
+        return '<div class="order-item">Ошибка загрузки товаров</div>';
+      }
+    }
+
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabName + 'Tab').classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      if (tabName === 'orders') {
+        loadAllData();
+      }
+    }
+
+    function showSuccess(message) {
+      const msg = document.getElementById('successMessage');
+      msg.textContent = message;
+      msg.style.display = 'block';
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 3000);
+    }
+
+    function showError(message) {
+      const msg = document.getElementById('errorMessage');
+      msg.textContent = message;
+      msg.style.display = 'block';
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
