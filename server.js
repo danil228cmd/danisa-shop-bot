@@ -26,7 +26,6 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '';
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
-const USE_POLLING = process.env.USE_POLLING !== 'false'; // Включить polling по умолчанию
 
 // === DATA STORAGE (JSON FILES) ===
 const DATA_DIR = path.join(__dirname, 'data');
@@ -178,12 +177,48 @@ const handleTelegramMessage = (msg) => {
   const userId = msg.from.id;
   const firstName = msg.from.first_name || 'User';
 
-  // /start command
+  // /start command - с кнопками Web App
   if (text === '/start') {
     const message = {
       chat_id: chatId,
-      text: `👋 Привет, ${firstName}!\n\nДобро пожаловать в DANISA SHOP! 🛍️\n\nОткройте магазин по ссылке ниже:\n${SERVER_URL}/miniapp/`,
-      parse_mode: 'HTML'
+      text: `👋 Привет, ${firstName}!\n\n🛍️ Добро пожаловать в <b>DANISA SHOP</b>!\n\nВыберите действие:`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🛍️ Открыть магазин',
+              web_app: { url: `${SERVER_URL}/miniapp/` }
+            }
+          ],
+          [
+            {
+              text: '⚙️ Админ-панель',
+              web_app: { url: `${SERVER_URL}/admin/` }
+            }
+          ]
+        ]
+      }
+    };
+
+    sendTelegramRequest('/sendMessage', message);
+  }
+
+  // /shop - открыть магазин
+  if (text === '/shop' || text === '/магазин') {
+    const message = {
+      chat_id: chatId,
+      text: '🛍️ Открывайте магазин!',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🛍️ Открыть магазин',
+              web_app: { url: `${SERVER_URL}/miniapp/` }
+            }
+          ]
+        ]
+      }
     };
 
     sendTelegramRequest('/sendMessage', message);
@@ -194,8 +229,18 @@ const handleTelegramMessage = (msg) => {
     if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
       const message = {
         chat_id: chatId,
-        text: `🔐 Добро пожаловать, администратор!\n\nАдмин-панель: ${SERVER_URL}/admin/\n\nВойдите с паролем: <b>admin123</b>`,
-        parse_mode: 'HTML'
+        text: `🔐 <b>Админ-панель</b>\n\nВойдите с паролем: <code>admin123</code>`,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '⚙️ Открыть админ-панель',
+                web_app: { url: `${SERVER_URL}/admin/` }
+              }
+            ]
+          ]
+        }
       };
 
       sendTelegramRequest('/sendMessage', message);
@@ -208,51 +253,17 @@ const handleTelegramMessage = (msg) => {
       sendTelegramRequest('/sendMessage', message);
     }
   }
-};
 
-// === TELEGRAM POLLING ===
+  // /help
+  if (text === '/help') {
+    const message = {
+      chat_id: chatId,
+      text: `📱 <b>DANISA SHOP BOT</b>\n\nДоступные команды:\n/start - Главное меню\n/shop - Открыть магазин\n/admin - Админ-панель\n/help - Помощь`,
+      parse_mode: 'HTML'
+    };
 
-let lastUpdateId = 0;
-
-const telegramPolling = () => {
-  if (!TELEGRAM_TOKEN) return;
-
-  const options = {
-    hostname: 'api.telegram.org',
-    port: 443,
-    path: `/bot${TELEGRAM_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`,
-    method: 'GET'
-  };
-
-  const req = https.request(options, (res) => {
-    let data = '';
-    res.on('data', chunk => { data += chunk; });
-    res.on('end', () => {
-      try {
-        const result = JSON.parse(data);
-        if (result.ok && result.result && result.result.length > 0) {
-          result.result.forEach(update => {
-            lastUpdateId = Math.max(lastUpdateId, update.update_id);
-            if (update.message) {
-              handleTelegramMessage(update.message);
-            }
-          });
-        }
-      } catch (e) {
-        console.error('[Telegram Polling] Ошибка парсинга:', e.message);
-      }
-      
-      // Continue polling
-      setTimeout(telegramPolling, 1000);
-    });
-  });
-
-  req.on('error', (e) => {
-    console.error('[Telegram Polling] Ошибка:', e.message);
-    setTimeout(telegramPolling, 5000);
-  });
-
-  req.end();
+    sendTelegramRequest('/sendMessage', message);
+  }
 };
 
 // === REQUEST HANDLER ===
@@ -596,16 +607,16 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════╗
-║       🚀 DANISA SHOP БЕЗ npm          ║
+║       🚀 DANISA SHOP - WEB APP        ║
 ╚════════════════════════════════════════╝
 
 ✅ Сервер запущен на PORT ${PORT}
 
 📱 Магазин (Mini App):
-   http://localhost:${PORT}/miniapp/
+   ${SERVER_URL}/miniapp/
 
 ⚙️  Админ панель:
-   http://localhost:${PORT}/admin/
+   ${SERVER_URL}/admin/
 
 📊 Данные хранятся в папке: ./data/
 
@@ -621,10 +632,8 @@ console.log(`  ADMIN_CHAT_ID: ${ADMIN_CHAT_ID || '✗ не установлен'
 console.log(`  ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID || '✗ не установлен'}`);
 console.log(`  SERVER_URL: ${SERVER_URL}`);
 
-// Start Telegram bot polling if enabled
-if (USE_POLLING && TELEGRAM_TOKEN) {
-  console.log('\n🤖 Запуск Telegram бота (polling)...');
-  console.log('   ✓ Бот готов принимать сообщения');
-  console.log('   Команды: /start, /admin');
-  setTimeout(telegramPolling, 1000);
+if (TELEGRAM_TOKEN) {
+  console.log('\n🤖 Telegram Web App бот готов!');
+  console.log('   Команды: /start, /shop, /admin, /help');
+  console.log('   ✓ Используются inline кнопки с Web App');
 }
