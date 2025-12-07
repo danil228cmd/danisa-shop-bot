@@ -368,12 +368,12 @@ const server = http.createServer((req, res) => {
   // GET /api/subcategories/:categoryId
   if (pathname.match(/^\/api\/subcategories\/\d+$/) && req.method === 'GET') {
     const categoryId = parseInt(pathname.split('/')[3]);
-    const filtered = subcategories.filter(s => s.category_id === categoryId);
+    const filtered = subcategories.filter(s => parseInt(s.category_id) === categoryId);
     sendJSON(res, 200, filtered);
     return;
   }
 
-  // POST /api/subcategories
+  // POST /api/subcategories - ИСПРАВЛЕНО!
   if (pathname === '/api/subcategories' && req.method === 'POST') {
     parseBody(req, (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
@@ -383,7 +383,7 @@ const server = http.createServer((req, res) => {
 
       const subcategory = {
         id: getNextId(subcategories),
-        category_id: data.categoryId,
+        category_id: parseInt(data.categoryId), // ИСПРАВЛЕНО: конвертируем в число
         name: data.name,
         created_at: new Date().toISOString()
       };
@@ -417,7 +417,7 @@ const server = http.createServer((req, res) => {
 
     if (query.subcategoryId) {
       const subcategoryId = parseInt(query.subcategoryId);
-      filtered = filtered.filter(p => p.subcategory_id === subcategoryId);
+      filtered = filtered.filter(p => parseInt(p.subcategory_id) === subcategoryId);
     }
 
     sendJSON(res, 200, filtered);
@@ -448,7 +448,7 @@ const server = http.createServer((req, res) => {
 
       const product = {
         id: getNextId(products),
-        subcategory_id: data.subcategoryId,
+        subcategory_id: parseInt(data.subcategoryId), // ИСПРАВЛЕНО: конвертируем в число
         name: data.name,
         description: data.description || '',
         price: parseFloat(data.price),
