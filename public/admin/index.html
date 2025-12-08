@@ -6,241 +6,142 @@
   <title>Admin - DANISA SHOP</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     :root {
-      --bg: #000; --card: #1a1a1a; --accent: #ff3b3b; --text: #fff;
-      --gray: #666; --success: #4caf50; --border: #333;
+      --bg: #f5f5f7; --card: #fff; --primary: #007aff; --text: #000;
+      --gray: #8e8e93; --border: #d1d1d6; --success: #34c759; --red: #ff3b30;
     }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: var(--bg); color: var(--text);
     }
-
     .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-    /* Header */
     .header {
-      background: linear-gradient(135deg, var(--card), #000);
-      padding: 24px; border-radius: 16px; margin-bottom: 24px;
+      background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px;
       display: flex; justify-content: space-between; align-items: center;
-      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-
-    .header h1 { font-size: 26px; letter-spacing: 0.5px; }
-
+    .header h1 { font-size: 24px; font-weight: 600; }
     .logout {
-      padding: 10px 20px; background: rgba(255,59,59,0.2); color: var(--accent);
-      border: 1px solid var(--accent); border-radius: 10px; cursor: pointer;
-      font-weight: 600; transition: all 0.3s;
+      padding: 8px 16px; background: var(--red); color: white; border: none;
+      border-radius: 8px; cursor: pointer; font-weight: 500;
     }
-
-    .logout:hover { background: var(--accent); color: #fff; }
-
-    /* Auth */
     .auth {
-      background: var(--card); padding: 40px; border-radius: 16px;
-      text-align: center; max-width: 400px; margin: 100px auto;
-      border: 1px solid var(--border);
+      background: var(--card); padding: 40px; border-radius: 12px; text-align: center;
+      max-width: 400px; margin: 100px auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-
-    .auth h3 { margin-bottom: 20px; font-size: 22px; }
-
+    .auth h3 { margin-bottom: 20px; font-size: 20px; }
     .auth input {
-      width: 100%; padding: 12px 16px; background: #0a0a0a;
-      border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px;
-      font-size: 15px; color: var(--text);
+      width: 100%; padding: 12px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 16px; font-size: 15px;
     }
-
-    .auth input:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255,59,59,0.1);
-    }
-
     .auth-btn {
-      width: 100%; padding: 12px; background: var(--accent); color: #fff;
-      border: none; border-radius: 10px; cursor: pointer; font-size: 15px;
-      font-weight: 600; transition: all 0.3s;
+      width: 100%; padding: 12px; background: var(--primary); color: white;
+      border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 500;
     }
-
-    .auth-btn:hover {
-      box-shadow: 0 6px 20px rgba(255,59,59,0.4); transform: translateY(-2px);
-    }
-
-    /* Stats */
     .stats {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px; margin-bottom: 24px;
+      gap: 16px; margin-bottom: 20px;
     }
-
     .stat {
-      background: var(--card); padding: 24px; border-radius: 14px;
-      text-align: center; border: 1px solid var(--border);
+      background: var(--card); padding: 20px; border-radius: 12px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-
-    .stat-val {
-      font-size: 36px; font-weight: 700; color: var(--accent); margin-bottom: 8px;
-    }
-
+    .stat-val { font-size: 32px; font-weight: 600; color: var(--primary); margin-bottom: 8px; }
     .stat-label { font-size: 14px; color: var(--gray); }
-
-    /* Tabs */
     .tabs {
-      display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+      display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto;
     }
-
     .tab {
-      padding: 12px 24px; background: var(--card); border: 2px solid var(--border);
-      border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s;
+      padding: 10px 20px; background: var(--card); border: none; border-radius: 8px;
+      cursor: pointer; font-weight: 500; transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-
-    .tab.active {
-      background: var(--accent); border-color: var(--accent);
-      box-shadow: 0 4px 12px rgba(255,59,59,0.4);
-    }
-
-    .tab:hover { border-color: var(--accent); }
-
-    /* Tab Content */
+    .tab.active { background: var(--primary); color: white; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-
     .section {
-      background: var(--card); padding: 24px; border-radius: 14px;
-      margin-bottom: 16px; border: 1px solid var(--border);
+      background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-
-    .section h2 { font-size: 20px; margin-bottom: 20px; }
-
+    .section h2 { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
     .form-box {
-      background: #0a0a0a; padding: 20px; border-radius: 12px; margin-bottom: 20px;
+      background: var(--bg); padding: 16px; border-radius: 8px; margin-bottom: 16px;
     }
-
-    .field {
-      margin-bottom: 16px;
-    }
-
+    .field { margin-bottom: 12px; }
     .field label {
-      display: block; font-size: 13px; font-weight: 600;
-      margin-bottom: 7px; color: var(--gray);
+      display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px;
+      color: var(--gray);
     }
-
     .field input, .field textarea, .field select {
-      width: 100%; padding: 11px 14px; background: var(--card);
-      border: 1px solid var(--border); border-radius: 9px; font-size: 14px;
-      color: var(--text); font-family: inherit;
+      width: 100%; padding: 10px; background: white; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 14px; font-family: inherit;
     }
-
-    .field input:focus, .field textarea:focus, .field select:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255,59,59,0.1);
+    .field textarea { min-height: 80px; resize: vertical; }
+    .file-input {
+      width: 100%; padding: 10px; background: white; border: 1px solid var(--border);
+      border-radius: 6px; cursor: pointer;
     }
-
-    .field textarea {
-      min-height: 80px; resize: vertical;
-    }
-
     .btn {
-      padding: 12px 24px; background: var(--accent); color: #fff;
-      border: none; border-radius: 10px; cursor: pointer; font-size: 14px;
-      font-weight: 600; transition: all 0.3s;
+      padding: 10px 20px; background: var(--primary); color: white; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;
     }
-
-    .btn:hover {
-      box-shadow: 0 6px 20px rgba(255,59,59,0.4); transform: translateY(-2px);
-    }
-
-    .btn:disabled {
-      background: var(--gray); cursor: not-allowed; transform: none;
-    }
-
-    /* List */
-    .list { margin-top: 20px; }
-
+    .btn:disabled { background: var(--gray); cursor: not-allowed; }
+    .list { margin-top: 16px; }
     .item {
-      background: #0a0a0a; padding: 16px; border-radius: 10px;
-      margin-bottom: 10px; display: flex; justify-content: space-between;
-      align-items: center; border: 1px solid var(--border);
-    }
-
-    .item-info { flex: 1; }
-
-    .item-name { font-weight: 600; margin-bottom: 5px; }
-
-    .item-meta { font-size: 12px; color: var(--gray); }
-
-    .item-actions { display: flex; gap: 8px; }
-
-    .del-btn {
-      background: rgba(255,59,59,0.2); color: var(--accent);
-      border: none; padding: 7px 12px; border-radius: 7px;
-      cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;
-    }
-
-    .del-btn:hover { background: var(--accent); color: #fff; }
-
-    .edit-btn {
-      background: rgba(33,150,243,0.2); color: #2196F3;
-      border: none; padding: 7px 12px; border-radius: 7px;
-      cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.3s;
-    }
-
-    .edit-btn:hover { background: #2196F3; color: #fff; }
-
-    /* Orders */
-    .order {
-      background: var(--card); padding: 18px; border-radius: 12px;
-      margin-bottom: 12px; border-left: 4px solid var(--accent);
-      border: 1px solid var(--border); border-left-width: 4px;
-    }
-
-    .order-head {
+      background: var(--bg); padding: 14px; border-radius: 8px; margin-bottom: 8px;
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px;
     }
-
-    .order-id { font-weight: 700; font-size: 17px; }
-
+    .item-info { flex: 1; }
+    .item-name { font-weight: 500; margin-bottom: 4px; }
+    .item-meta { font-size: 12px; color: var(--gray); }
+    .item-actions { display: flex; gap: 8px; }
+    .del-btn {
+      background: rgba(255,59,48,0.1); color: var(--red); border: none;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
+    }
+    .edit-btn {
+      background: rgba(0,122,255,0.1); color: var(--primary); border: none;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
+    }
+    .order {
+      background: var(--card); padding: 16px; border-radius: 8px; margin-bottom: 12px;
+      border-left: 4px solid var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .order-head {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .order-id { font-weight: 600; font-size: 16px; }
     .order-status {
-      background: var(--success); color: #fff; padding: 4px 10px;
-      border-radius: 6px; font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
     }
-
+    .order-status.new { background: rgba(255,204,0,0.2); color: #ff9500; }
+    .order-status.completed { background: rgba(52,199,89,0.2); color: var(--success); }
     .order-info {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px; font-size: 14px; margin-bottom: 12px;
     }
-
-    .order-info-item {
-      padding: 10px; background: #0a0a0a; border-radius: 7px;
-    }
-
+    .order-info-item { padding: 10px; background: var(--bg); border-radius: 6px; }
     .order-info-label {
-      font-size: 11px; color: var(--gray); font-weight: 600; margin-bottom: 4px;
+      font-size: 11px; color: var(--gray); font-weight: 500; margin-bottom: 4px;
     }
-
     .order-items {
-      background: #0a0a0a; padding: 12px; border-radius: 7px; font-size: 13px;
+      background: var(--bg); padding: 12px; border-radius: 6px; font-size: 13px;
+      margin-bottom: 12px;
     }
-
-    .order-item {
-      margin-bottom: 5px; padding: 5px 0;
+    .order-item { margin-bottom: 4px; padding: 4px 0; }
+    .complete-btn {
+      background: var(--success); color: white; border: none; padding: 8px 16px;
+      border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;
     }
-
     .msg {
-      padding: 14px; border-radius: 10px; margin-bottom: 20px;
-      display: none; animation: fadeIn 0.3s;
+      padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none;
     }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .msg.success { background: rgba(76,175,80,0.2); color: var(--success); border: 1px solid var(--success); }
-    .msg.error { background: rgba(255,59,59,0.2); color: var(--accent); border: 1px solid var(--accent); }
-
+    .msg.success { background: rgba(52,199,89,0.2); color: var(--success); }
+    .msg.error { background: rgba(255,59,48,0.2); color: var(--red); }
     .loading { text-align: center; padding: 30px; color: var(--gray); }
-
-    @media (max-width: 768px) {
-      .order-info { grid-template-columns: 1fr; }
+    .preview-img {
+      max-width: 100px; height: 80px; object-fit: cover; border-radius: 6px;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -249,7 +150,7 @@
     <div class="header">
       <div>
         <h1>⚙️ Админ-панель</h1>
-        <p style="font-size: 12px; margin-top: 5px; color: var(--gray);">DANISA SHOP</p>
+        <p style="font-size: 12px; margin-top: 4px; color: var(--gray);">DANISA SHOP</p>
       </div>
       <button class="logout" onclick="logout()">Выход</button>
     </div>
@@ -275,7 +176,7 @@
         </div>
         <div class="stat">
           <div class="stat-val" id="totalRevenue">0₽</div>
-          <div class="stat-label">Выручка</div>
+          <div class="stat-label">Общая выручка</div>
         </div>
       </div>
 
@@ -306,9 +207,7 @@
           <div class="form-box">
             <div class="field">
               <label>Категория</label>
-              <select id="subCat">
-                <option value="">Выберите...</option>
-              </select>
+              <select id="subCat"><option value="">Выберите...</option></select>
             </div>
             <div class="field">
               <label>Название</label>
@@ -326,9 +225,7 @@
           <div class="form-box">
             <div class="field">
               <label>Подкатегория</label>
-              <select id="prodSub">
-                <option value="">Выберите...</option>
-              </select>
+              <select id="prodSub"><option value="">Выберите...</option></select>
             </div>
             <div class="field">
               <label>Название</label>
@@ -342,7 +239,12 @@
               <label>Цена (₽)</label>
               <input type="number" id="prodPrice" placeholder="0" min="0" step="0.01">
             </div>
-            <button class="btn" onclick="createProd()">Добавить</button>
+            <div class="field">
+              <label>Фото товара</label>
+              <input type="file" class="file-input" id="prodImage" accept="image/*" onchange="previewImage(this)">
+              <img id="imagePreview" class="preview-img" style="display: none;">
+            </div>
+            <button class="btn" onclick="createProd()">Добавить товар</button>
           </div>
           <div class="list" id="prodsList"></div>
         </div>
@@ -350,392 +252,42 @@
 
       <div class="tab-content" id="ordersTab">
         <div class="section">
-          <h2>Заказы</h2>
-          <div id="ordersList">
-            <div class="loading">Загрузка...</div>
-          </div>
+          <h2>Новые заказы</h2>
+          <div id="newOrdersList"><div class="loading">Загрузка...</div></div>
+        </div>
+        <div class="section">
+          <h2>История заказов</h2>
+          <div id="completedOrdersList"><div class="loading">Загрузка...</div></div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    let adminPassword = null;
-    let cats = [];
-    let subs = [];
-    let prods = [];
-
-    if (localStorage.getItem('isAdmin') === 'true') {
-      showMain();
-    }
-
-    function login() {
-      const pwd = document.getElementById('adminPassword').value;
-      if (!pwd) {
-        showError('Введите пароль');
-        return;
-      }
-      adminPassword = pwd;
-      localStorage.setItem('adminPassword', pwd);
-      localStorage.setItem('isAdmin', 'true');
-      document.getElementById('adminPassword').value = '';
-      showMain();
-    }
-
-    function logout() {
-      adminPassword = null;
-      localStorage.removeItem('adminPassword');
-      localStorage.removeItem('isAdmin');
-      document.getElementById('authSection').style.display = 'block';
-      document.getElementById('mainContent').style.display = 'none';
-    }
-
-    function showMain() {
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('mainContent').style.display = 'block';
-      adminPassword = localStorage.getItem('adminPassword');
-      loadAll();
-    }
-
-    async function loadAll() {
-      try {
-        const [catsRes, prodsRes, ordersRes] = await Promise.all([
-          fetch('/api/categories'),
-          fetch('/api/products'),
-          fetch(`/api/orders?password=${adminPassword}`)
-        ]);
-
-        cats = await catsRes.json();
-        prods = await prodsRes.json();
-
-        subs = [];
-        for (const cat of cats) {
-          const res = await fetch(`/api/subcategories/${cat.id}`);
-          const data = await res.json();
-          subs.push(...data);
-        }
-
-        const orders = await ordersRes.json();
-
-        renderCats();
-        renderSubs();
-        renderProds();
-        renderOrders(orders);
-        updateStats(orders);
-      } catch (e) {
-        showError('Ошибка загрузки');
-      }
-    }
-
-    function updateStats(orders) {
-      document.getElementById('totalOrders').textContent = orders.length || 0;
-      document.getElementById('totalProducts').textContent = prods.length || 0;
-      const rev = orders.reduce((s, o) => s + (o.total_price || 0), 0) || 0;
-      document.getElementById('totalRevenue').textContent = `${rev}₽`;
-      document.getElementById('stats').style.display = 'grid';
-    }
-
-    async function createCat() {
-      const name = document.getElementById('catName').value.trim();
-      if (!name) {
-        showError('Введите название');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, password: adminPassword })
-        });
-
-        if (res.ok) {
-          document.getElementById('catName').value = '';
-          showSuccess('Добавлено');
-          loadAll();
-        } else {
-          showError('Ошибка');
-        }
-      } catch (e) {
-        showError('Ошибка');
-      }
-    }
-
-    function renderCats() {
-      const el = document.getElementById('catsList');
-      if (cats.length === 0) {
-        el.innerHTML = '<div class="loading">Нет категорий</div>';
-        return;
-      }
-
-      el.innerHTML = cats.map(c => `
-        <div class="item">
-          <div class="item-info">
-            <div class="item-name">${c.name}</div>
-          </div>
-          <div class="item-actions">
-            <button class="del-btn" onclick="delCat(${c.id})">Удалить</button>
-          </div>
-        </div>
-      `).join('');
-
-      const sel = document.getElementById('subCat');
-      sel.innerHTML = '<option value="">Выберите...</option>' +
-        cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    }
-
-    async function delCat(id) {
-      if (!confirm('Удалить?')) return;
-
-      try {
-        const res = await fetch(`/api/categories/${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: adminPassword })
-        });
-
-        if (res.ok) {
-          showSuccess('Удалено');
-          loadAll();
-        }
-      } catch (e) {}
-    }
-
-    async function createSub() {
-      const catId = document.getElementById('subCat').value;
-      const name = document.getElementById('subName').value.trim();
-
-      if (!catId || !name) {
-        showError('Заполните все поля');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/subcategories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ categoryId: catId, name, password: adminPassword })
-        });
-
-        if (res.ok) {
-          document.getElementById('subName').value = '';
-          showSuccess('Добавлено');
-          loadAll();
-        }
-      } catch (e) {
-        showError('Ошибка');
-      }
-    }
-
-    function renderSubs() {
-      const el = document.getElementById('subsList');
-      if (subs.length === 0) {
-        el.innerHTML = '<div class="loading">Нет подкатегорий</div>';
-        return;
-      }
-
-      el.innerHTML = subs.map(s => {
-        const cat = cats.find(c => c.id === parseInt(s.category_id));
-        return `
-          <div class="item">
-            <div class="item-info">
-              <div class="item-name">${s.name}</div>
-              <div class="item-meta">Категория: ${cat?.name || '?'}</div>
-            </div>
-            <div class="item-actions">
-              <button class="del-btn" onclick="delSub(${s.id})">Удалить</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const sel = document.getElementById('prodSub');
-      sel.innerHTML = '<option value="">Выберите...</option>' +
-        subs.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-    }
-
-    async function delSub(id) {
-      if (!confirm('Удалить?')) return;
-
-      try {
-        const res = await fetch(`/api/subcategories/${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: adminPassword })
-        });
-
-        if (res.ok) {
-          showSuccess('Удалено');
-          loadAll();
-        }
-      } catch (e) {}
-    }
-
-    async function createProd() {
-      const subId = document.getElementById('prodSub').value;
-      const name = document.getElementById('prodName').value.trim();
-      const desc = document.getElementById('prodDesc').value.trim();
-      const price = parseFloat(document.getElementById('prodPrice').value);
-
-      if (!subId || !name || !price) {
-        showError('Заполните все поля');
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subcategoryId: subId, name, description: desc, price, password: adminPassword })
-        });
-
-        if (res.ok) {
-          document.getElementById('prodName').value = '';
-          document.getElementById('prodDesc').value = '';
-          document.getElementById('prodPrice').value = '';
-          showSuccess('Добавлено');
-          loadAll();
-        }
-      } catch (e) {
-        showError('Ошибка');
-      }
-    }
-
-    function renderProds() {
-      const el = document.getElementById('prodsList');
-      if (prods.length === 0) {
-        el.innerHTML = '<div class="loading">Нет товаров</div>';
-        return;
-      }
-
-      el.innerHTML = prods.map(p => {
-        const sub = subs.find(s => s.id === parseInt(p.subcategory_id));
-        return `
-          <div class="item">
-            <div class="item-info">
-              <div class="item-name">${p.name}</div>
-              <div class="item-meta">${sub?.name || '?'} • ${p.price}₽</div>
-              ${p.main_image ? `<div style="margin-top: 8px;"><img src="${p.main_image}" style="max-width: 80px; height: 60px; object-fit: cover; border-radius: 6px;"></div>` : ''}
-            </div>
-            <div class="item-actions">
-              <button class="edit-btn" onclick="editProd(${p.id})">Фото</button>
-              <button class="del-btn" onclick="delProd(${p.id})">Удалить</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function editProd(id) {
-      const url = prompt('Введите URL изображения:');
-      if (!url) return;
-
-      const p = prods.find(x => x.id === id);
-      if (!p) return;
-
-      if (!p.images) p.images = [];
-      p.images.push(url);
-      if (!p.main_image) p.main_image = url;
-
-      showSuccess('Добавлено (временно в памяти)');
-      renderProds();
-    }
-
-    async function delProd(id) {
-      if (!confirm('Удалить?')) return;
-
-      try {
-        const res = await fetch(`/api/products/${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: adminPassword })
-        });
-
-        if (res.ok) {
-          showSuccess('Удалено');
-          loadAll();
-        }
-      } catch (e) {}
-    }
-
-    function renderOrders(orders) {
-      const el = document.getElementById('ordersList');
-
-      if (!orders || orders.length === 0) {
-        el.innerHTML = '<div class="loading">Нет заказов</div>';
-        return;
-      }
-
-      el.innerHTML = orders.map(o => `
-        <div class="order">
-          <div class="order-head">
-            <span class="order-id">Заказ #${o.id}</span>
-            <span class="order-status">${o.status}</span>
-          </div>
-          <div class="order-info">
-            <div class="order-info-item">
-              <div class="order-info-label">Пользователь</div>
-              <strong>@${o.username}</strong>
-            </div>
-            <div class="order-info-item">
-              <div class="order-info-label">Контакт</div>
-              <strong>${o.contact}</strong>
-            </div>
-            <div class="order-info-item">
-              <div class="order-info-label">Сумма</div>
-              <strong>${o.total_price}₽</strong>
-            </div>
-          </div>
-          <div class="order-items">
-            <strong>Товары:</strong>
-            ${renderOrderItems(o.items)}
-          </div>
-          <div style="font-size: 11px; color: var(--gray); margin-top: 10px;">
-            ${new Date(o.created_at).toLocaleString('ru-RU')}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function renderOrderItems(items) {
-      try {
-        if (typeof items === 'string') items = JSON.parse(items);
-        if (Array.isArray(items)) {
-          return items.map((x, i) => `
-            <div class="order-item">
-              ${i + 1}. ${x.name} x${x.quantity} = ${x.price * x.quantity}₽
-            </div>
-          `).join('');
-        }
-        return '<div class="order-item">Нет товаров</div>';
-      } catch {
-        return '<div class="order-item">Ошибка</div>';
-      }
-    }
-
-    function showTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.getElementById(tab + 'Tab').classList.add('active');
-
-      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-
-      if (tab === 'orders') loadAll();
-    }
-
-    function showSuccess(msg) {
-      const el = document.getElementById('successMsg');
-      el.textContent = msg;
-      el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 3000);
-    }
-
-    function showError(msg) {
-      const el = document.getElementById('errorMsg');
-      el.textContent = msg;
-      el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 3000);
-    }
+    let adminPassword=null,cats=[],subs=[],prods=[],allOrders=[],uploadedImageData=null;
+    if(localStorage.getItem('isAdmin')==='true'){showMain();}
+    function login(){const p=document.getElementById('adminPassword').value;if(!p){showError('Введите пароль');return;}adminPassword=p;localStorage.setItem('adminPassword',p);localStorage.setItem('isAdmin','true');document.getElementById('adminPassword').value='';showMain();}
+    function logout(){adminPassword=null;localStorage.removeItem('adminPassword');localStorage.removeItem('isAdmin');document.getElementById('authSection').style.display='block';document.getElementById('mainContent').style.display='none';}
+    function showMain(){document.getElementById('authSection').style.display='none';document.getElementById('mainContent').style.display='block';adminPassword=localStorage.getItem('adminPassword');loadAll();}
+    async function loadAll(){try{const[catsRes,prodsRes,ordersRes]=await Promise.all([fetch('/api/categories'),fetch('/api/products'),fetch(`/api/orders?password=${adminPassword}`)]);cats=await catsRes.json();prods=await prodsRes.json();allOrders=await ordersRes.json();subs=[];for(const c of cats){const r=await fetch(`/api/subcategories/${c.id}`);const d=await r.json();subs.push(...d);}renderCats();renderSubs();renderProds();renderOrders();updateStats();}catch(e){showError('Ошибка загрузки');}}
+    function updateStats(){const newOrders=allOrders.filter(o=>o.status==='new');document.getElementById('totalOrders').textContent=newOrders.length||0;document.getElementById('totalProducts').textContent=prods.length||0;const rev=allOrders.reduce((s,o)=>s+(o.total_price||0),0)||0;document.getElementById('totalRevenue').textContent=`${rev}₽`;document.getElementById('stats').style.display='grid';}
+    function previewImage(input){if(input.files&&input.files[0]){const reader=new FileReader();reader.onload=function(e){uploadedImageData=e.target.result;document.getElementById('imagePreview').src=e.target.result;document.getElementById('imagePreview').style.display='block';};reader.readAsDataURL(input.files[0]);}}
+    async function createCat(){const n=document.getElementById('catName').value.trim();if(!n){showError('Введите название');return;}try{const r=await fetch('/api/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,password:adminPassword})});if(r.ok){document.getElementById('catName').value='';showSuccess('Добавлено');loadAll();}}catch(e){showError('Ошибка');}}
+    function renderCats(){const e=document.getElementById('catsList');if(cats.length===0){e.innerHTML='<div class="loading">Нет категорий</div>';return;}e.innerHTML=cats.map(c=>`<div class="item"><div class="item-info"><div class="item-name">${c.name}</div></div><div class="item-actions"><button class="del-btn" onclick="delCat(${c.id})">Удалить</button></div></div>`).join('');const s=document.getElementById('subCat');s.innerHTML='<option value="">Выберите...</option>'+cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');}
+    async function delCat(id){if(!confirm('Удалить?'))return;try{const r=await fetch(`/api/categories/${id}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Удалено');loadAll();}}catch(e){}}
+    async function createSub(){const cId=document.getElementById('subCat').value,n=document.getElementById('subName').value.trim();if(!cId||!n){showError('Заполните все поля');return;}try{const r=await fetch('/api/subcategories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({categoryId:cId,name:n,password:adminPassword})});if(r.ok){document.getElementById('subName').value='';showSuccess('Добавлено');loadAll();}}catch(e){showError('Ошибка');}}
+    function renderSubs(){const e=document.getElementById('subsList');if(subs.length===0){e.innerHTML='<div class="loading">Нет подкатегорий</div>';return;}e.innerHTML=subs.map(s=>{const c=cats.find(x=>x.id===parseInt(s.category_id));return`<div class="item"><div class="item-info"><div class="item-name">${s.name}</div><div class="item-meta">Категория: ${c?.name||'?'}</div></div><div class="item-actions"><button class="del-btn" onclick="delSub(${s.id})">Удалить</button></div></div>`;}).join('');const sel=document.getElementById('prodSub');sel.innerHTML='<option value="">Выберите...</option>'+subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');}
+    async function delSub(id){if(!confirm('Удалить?'))return;try{const r=await fetch(`/api/subcategories/${id}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Удалено');loadAll();}}catch(e){}}
+    async function createProd(){const sId=document.getElementById('prodSub').value,n=document.getElementById('prodName').value.trim(),d=document.getElementById('prodDesc').value.trim(),p=parseFloat(document.getElementById('prodPrice').value);if(!sId||!n||!p){showError('Заполните все поля');return;}try{const r=await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subcategoryId:sId,name:n,description:d,price:p,password:adminPassword,imageData:uploadedImageData})});if(r.ok){document.getElementById('prodName').value='';document.getElementById('prodDesc').value='';document.getElementById('prodPrice').value='';document.getElementById('prodImage').value='';document.getElementById('imagePreview').style.display='none';uploadedImageData=null;showSuccess('Добавлено');loadAll();}}catch(e){showError('Ошибка');}}
+    function renderProds(){const e=document.getElementById('prodsList');if(prods.length===0){e.innerHTML='<div class="loading">Нет товаров</div>';return;}e.innerHTML=prods.map(p=>{const s=subs.find(x=>x.id===parseInt(p.subcategory_id));return`<div class="item"><div class="item-info"><div class="item-name">${p.name}</div><div class="item-meta">${s?.name||'?'} • ${p.price}₽</div>${p.main_image?`<img src="${p.main_image}" class="preview-img">`:''}</div><div class="item-actions"><button class="del-btn" onclick="delProd(${p.id})">Удалить</button></div></div>`;}).join('');}
+    async function delProd(id){if(!confirm('Удалить?'))return;try{const r=await fetch(`/api/products/${id}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Удалено');loadAll();}}catch(e){}}
+    function renderOrders(){const newEl=document.getElementById('newOrdersList'),compEl=document.getElementById('completedOrdersList');const newOrders=allOrders.filter(o=>o.status==='new'),completedOrders=allOrders.filter(o=>o.status==='completed');if(newOrders.length===0)newEl.innerHTML='<div class="loading">Нет новых заказов</div>';else newEl.innerHTML=newOrders.map(o=>renderOrder(o,true)).join('');if(completedOrders.length===0)compEl.innerHTML='<div class="loading">История пуста</div>';else compEl.innerHTML=completedOrders.map(o=>renderOrder(o,false)).join('');}
+    function renderOrder(o,showBtn){return`<div class="order"><div class="order-head"><span class="order-id">Заказ #${o.id}</span><span class="order-status ${o.status}">${o.status==='new'?'Новый':'Завершён'}</span></div><div class="order-info"><div class="order-info-item"><div class="order-info-label">Пользователь</div><strong>@${o.username}</strong></div><div class="order-info-item"><div class="order-info-label">Контакт</div><strong>${o.contact}</strong></div><div class="order-info-item"><div class="order-info-label">Сумма</div><strong>${o.total_price}₽</strong></div></div><div class="order-items"><strong>Товары:</strong>${renderOrderItems(o.items)}</div><div style="font-size: 11px; color: var(--gray); margin-top: 8px;">${new Date(o.created_at).toLocaleString('ru-RU')}</div>${showBtn?`<button class="complete-btn" onclick="completeOrder(${o.id})">Завершить заказ</button>`:''}</div>`;}
+    function renderOrderItems(items){try{if(typeof items==='string')items=JSON.parse(items);if(Array.isArray(items))return items.map((x,i)=>`<div class="order-item">${i+1}. ${x.name} x${x.quantity} = ${x.price*x.quantity}₽</div>`).join('');return'<div class="order-item">Нет товаров</div>';}catch{return'<div class="order-item">Ошибка</div>';}}
+    async function completeOrder(id){if(!confirm('Завершить заказ?'))return;try{const r=await fetch(`/api/orders/${id}/complete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Заказ завершён');loadAll();}}catch(e){showError('Ошибка');}}
+    function showTab(t){document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));document.getElementById(t+'Tab').classList.add('active');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');if(t==='orders')loadAll();}
+    function showSuccess(m){const e=document.getElementById('successMsg');e.textContent=m;e.style.display='block';setTimeout(()=>{e.style.display='none';},3000);}
+    function showError(m){const e=document.getElementById('errorMsg');e.textContent=m;e.style.display='block';setTimeout(()=>{e.style.display='none';},3000);}
   </script>
 </body>
 </html>
