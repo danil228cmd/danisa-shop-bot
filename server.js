@@ -326,12 +326,13 @@ const server = http.createServer((req, res) => {
   console.log(`${req.method} ${pathname}`);
 
   // === STATIC FILES ===
-  if (pathname === '/' || pathname === '/miniapp' || pathname === '/miniapp/' || pathname.startsWith('/miniapp/')) {
-    serveFile(res, path.join(__dirname, 'public', 'miniapp', 'index.html'));
-    return;
-  }
-
-  if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html' || pathname.startsWith('/admin/')) {
+  // Admin first to avoid miniapp catch-all
+  if (
+    pathname === '/admin' ||
+    pathname === '/admin/' ||
+    pathname === '/admin/index.html' ||
+    pathname.startsWith('/admin')
+  ) {
     const key = parsedUrl.query.key || req.headers['x-admin-key'];
     const tgId = parsedUrl.query.tg;
     const allowedByKey = ADMIN_PASSWORD && key === ADMIN_PASSWORD;
@@ -343,6 +344,16 @@ const server = http.createServer((req, res) => {
       res.writeHead(403, { 'Content-Type': 'text/plain' });
       res.end('403 Forbidden');
     }
+    return;
+  }
+
+  if (
+    pathname === '/' ||
+    pathname === '/miniapp' ||
+    pathname === '/miniapp/' ||
+    pathname.startsWith('/miniapp')
+  ) {
+    serveFile(res, path.join(__dirname, 'public', 'miniapp', 'index.html'));
     return;
   }
 
