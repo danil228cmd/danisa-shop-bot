@@ -60,12 +60,41 @@ const writeJSON = (file, data) => {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
 };
 
+// Save base64 image to /uploads and return relative url
+const saveBase64Image = (imageData) => {
+  try {
+    if (!imageData || !imageData.startsWith('data:image')) return '';
+    const matches = imageData.match(/^data:(image\/\w+);base64,(.+)$/);
+    if (!matches) return '';
+    const ext = matches[1].split('/')[1];
+    const buffer = Buffer.from(matches[2], 'base64');
+    const fileName = `product-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const filePath = path.join(__dirname, 'uploads', fileName);
+    fs.writeFileSync(filePath, buffer);
+    return `/uploads/${fileName}`;
+  } catch (e) {
+    console.error('Не удалось сохранить изображение', e.message);
+    return '';
+  }
+};
+
 // Load all data
 let categories = readJSON(CATEGORIES_FILE, []);
 let subcategories = readJSON(SUBCATEGORIES_FILE, []);
 let products = readJSON(PRODUCTS_FILE, []);
 let orders = readJSON(ORDERS_FILE, []);
 let carts = readJSON(CARTS_FILE, {});
+
+// Normalize products to ensure main_image exists
+products = products.map(p => {
+  if (!p.main_image && p.images && p.images.length > 0) {
+    p.main_image = p.images[0];
+  }
+  if (!p.images) {
+    p.images = p.main_image ? [p.main_image] : [];
+  }
+  return p;
+});
 
 // Auto-save after changes
 const saveAll = () => {
@@ -446,13 +475,16 @@ const server = http.createServer((req, res) => {
         return;
       }
 
+      const mainImage = saveBase64Image(data.imageData);
+
       const product = {
         id: getNextId(products),
         subcategory_id: parseInt(data.subcategoryId), // ИСПРАВЛЕНО: конвертируем в число
         name: data.name,
         description: data.description || '',
         price: parseFloat(data.price),
-        images: [],
+        main_image: mainImage || '',
+        images: mainImage ? [mainImage] : [],
         created_at: new Date().toISOString()
       };
 
@@ -584,6 +616,31 @@ const server = http.createServer((req, res) => {
       sendTelegramMessage(orderText);
 
       sendJSON(res, 200, { id: order.id, status: 'success' });
+    });
+    return;
+  }
+
+  // POST /api/orders/:id/complete
+  if (pathname.match(/^\/api\/orders\/\d+\/complete$/) && req.method === 'POST') {
+    const id = parseInt(pathname.split('/')[3]);
+    parseBody(req, (err, data) => {
+      if (data.password !== ADMIN_PASSWORD) {
+        sendJSON(res, 401, { error: 'Неверный пароль' });
+        return;
+      }
+
+      const order = orders.find(o => o.id === id);
+      if (!order) {
+        sendJSON(res, 404, { error: 'Заказ не найден' });
+        return;
+      }
+
+      order.status = 'completed';
+      order.completed_at = new Date().toISOString();
+      saveAll();
+
+      sendTelegramMessage(`✅ Заказ #${order.id} завершён.`);
+      sendJSON(res, 200, { success: true });
     });
     return;
   }
