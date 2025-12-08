@@ -318,18 +318,20 @@ const server = http.createServer((req, res) => {
   }
 
   const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  let pathname = parsedUrl.pathname || '/';
+  // normalize multiple slashes
+  pathname = pathname.replace(/\/+/g, '/');
   const query = parsedUrl.query;
 
   console.log(`${req.method} ${pathname}`);
 
   // === STATIC FILES ===
-  if (pathname === '/' || pathname === '/miniapp/' || pathname === '/miniapp/index.html') {
+  if (pathname === '/' || pathname === '/miniapp' || pathname === '/miniapp/' || pathname.startsWith('/miniapp/')) {
     serveFile(res, path.join(__dirname, 'public', 'miniapp', 'index.html'));
     return;
   }
 
-  if (pathname === '/admin/' || pathname === '/admin/index.html') {
+  if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html' || pathname.startsWith('/admin/')) {
     const key = parsedUrl.query.key || req.headers['x-admin-key'];
     const tgId = parsedUrl.query.tg;
     const allowedByKey = ADMIN_PASSWORD && key === ADMIN_PASSWORD;
