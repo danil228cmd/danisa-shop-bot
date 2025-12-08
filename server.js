@@ -199,6 +199,9 @@ const sendTelegramRequest = (method, data) => {
 // === TELEGRAM MESSAGE HANDLER ===
 
 const handleTelegramMessage = (msg) => {
+  try {
+    console.log('[Telegram] update message:', JSON.stringify(msg));
+  } catch {}
   if (!msg) return;
 
   const chatId = msg.chat.id;
@@ -663,8 +666,22 @@ const server = http.createServer((req, res) => {
   // POST /telegram - Webhook for Telegram Bot
   if (pathname === '/telegram' && req.method === 'POST') {
     parseBody(req, (err, update) => {
-      if (update.message) {
-        handleTelegramMessage(update.message);
+      if (err) {
+        console.error('[Telegram] parse error:', err.message);
+        sendJSON(res, 400, { ok: false });
+        return;
+      }
+
+      try {
+        if (update.message) {
+          handleTelegramMessage(update.message);
+        } else if (update.callback_query && update.callback_query.message) {
+          handleTelegramMessage(update.callback_query.message);
+        } else {
+          console.log('[Telegram] update without message:', JSON.stringify(update));
+        }
+      } catch (e) {
+        console.error('[Telegram] handler error:', e);
       }
 
       sendJSON(res, 200, { ok: true });
