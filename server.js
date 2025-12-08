@@ -208,25 +208,30 @@ const handleTelegramMessage = (msg) => {
 
   // /start command - с кнопками Web App
   if (text === '/start') {
+    const keyboard = [
+      [
+        {
+          text: '🛍️ Открыть магазин',
+          web_app: { url: `${SERVER_URL}/miniapp/` }
+        }
+      ]
+    ];
+
+    if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
+      keyboard.push([
+        {
+          text: '⚙️ Админ-панель',
+          web_app: { url: `${SERVER_URL}/admin/?tg=${ADMIN_TELEGRAM_ID}` }
+        }
+      ]);
+    }
+
     const message = {
       chat_id: chatId,
       text: `👋 Привет, ${firstName}!\n\n🛍️ Добро пожаловать в <b>DANISA SHOP</b>!\n\nВыберите действие:`,
       parse_mode: 'HTML',
       reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '🛍️ Открыть магазин',
-              web_app: { url: `${SERVER_URL}/miniapp/` }
-            }
-          ],
-          [
-            {
-              text: '⚙️ Админ-панель',
-              web_app: { url: `${SERVER_URL}/admin/` }
-            }
-          ]
-        ]
+        inline_keyboard: keyboard
       }
     };
 
@@ -265,7 +270,7 @@ const handleTelegramMessage = (msg) => {
             [
               {
                 text: '⚙️ Открыть админ-панель',
-                web_app: { url: `${SERVER_URL}/admin/` }
+                web_app: { url: `${SERVER_URL}/admin/?tg=${ADMIN_TELEGRAM_ID}` }
               }
             ]
           ]
@@ -322,7 +327,17 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/admin/' || pathname === '/admin/index.html') {
-    serveFile(res, path.join(__dirname, 'public', 'admin', 'index.html'));
+    const key = parsedUrl.query.key || req.headers['x-admin-key'];
+    const tgId = parsedUrl.query.tg;
+    const allowedByKey = ADMIN_PASSWORD && key === ADMIN_PASSWORD;
+    const allowedByTelegram = ADMIN_TELEGRAM_ID && tgId && tgId.toString() === ADMIN_TELEGRAM_ID.toString();
+
+    if (allowedByKey || allowedByTelegram) {
+      serveFile(res, path.join(__dirname, 'public', 'admin', 'index.html'));
+    } else {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('403 Forbidden');
+    }
     return;
   }
 

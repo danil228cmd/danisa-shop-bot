@@ -69,8 +69,9 @@
     .card {
       background: var(--tg-card); border-radius: 16px; overflow: hidden;
       border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: all 0.2s;
-      position: relative; box-shadow: var(--shadow);
+      position: relative; box-shadow: var(--shadow); transform: translateY(0); transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
     .card:active { transform: translateY(2px); opacity: 0.92; }
     .card-img {
       width: 100%; aspect-ratio: 1; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(14,165,233,0.08));
@@ -220,7 +221,12 @@
   <div class="header">
     <div class="logo">DANISA</div>
     <button class="cart-btn" onclick="openCart()">
-      🛒<div class="cart-badge" id="cartBadge">0</div>
+      <span class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1.6"></circle><circle cx="18" cy="21" r="1.6"></circle><path d="M3 4h2l1.6 9.6a1 1 0 0 0 .99.84H18a1 1 0 0 0 .98-.8l1.2-6H6.1"></path>
+        </svg>
+      </span>
+      <div class="cart-badge" id="cartBadge">0</div>
     </button>
   </div>
   <div class="filters-wrap">
@@ -286,15 +292,15 @@
     function renderProducts(){let f=[...products];if(currentFilter){const s=subcategories.filter(s=>parseInt(s.category_id)===currentFilter).map(s=>s.id);f=f.filter(p=>s.includes(parseInt(p.subcategory_id)));}
     if(currentSort==='price-asc')f.sort((a,b)=>a.price-b.price);else if(currentSort==='price-desc')f.sort((a,b)=>b.price-a.price);else if(currentSort==='name')f.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
     const e=document.getElementById('products');if(f.length===0){e.innerHTML='<div class="loading">Товары не найдены</div>';return;}
-    e.innerHTML=f.map(p=>`<div class="card" onclick="openDetail(${p.id})"><div class="card-img">${p.main_image?`<img src="${p.main_image}" alt="${p.name}">`:''}<button class="info-btn" onclick="event.stopPropagation();openDetail(${p.id})">ℹ️</button></div><div class="card-body"><div class="card-name">${p.name}</div><div class="card-price">${p.price}₽</div></div></div>`).join('');}
-    async function openDetail(id){try{const r=await fetch(`/api/products/${id}`);const p=await r.json();currentProductId=id;const c=document.getElementById('carousel'),d=document.getElementById('carouselDots');d.innerHTML='';if(p.images&&p.images.length>0){c.innerHTML=p.images.map((i,x)=>`<div class="carousel-img ${x===0?'active':''}" id="carouselImg${x}"><img src="${i}" alt=""></div>`).join('');p.images.forEach((_,x)=>{const t=document.createElement('div');t.className=`dot ${x===0?'active':''}`;t.onclick=()=>switchImg(x);d.appendChild(t);});}else{c.innerHTML='<div class="carousel-img active"></div>';}
-    document.getElementById('modalName').textContent=p.name;document.getElementById('modalPrice').textContent=`${p.price}₽`;document.getElementById('modalDesc').textContent=p.description||'';document.getElementById('productModal').classList.add('active');}catch(e){}}
+    e.innerHTML=f.map(p=>`<div class="card" onclick="openDetail(${p.id})"><div class="card-img">${p.main_image?`<img src="${p.main_image}" alt="${p.name}">`:''}<button class="info-btn" onclick="event.stopPropagation();openDetail(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg></button></div><div class="card-body"><div class="card-name">${p.name}</div><div class="card-price">${p.price}₽</div></div></div>`).join('');}
+    async function openDetail(id){try{const r=await fetch(`/api/products/${id}`);const p=await r.json();if(!p||!p.id)return;currentProductId=id;const c=document.getElementById('carousel'),d=document.getElementById('carouselDots');d.innerHTML='';if(p.images&&p.images.length>0){c.innerHTML=p.images.map((i,x)=>`<div class="carousel-img ${x===0?'active':''}" id="carouselImg${x}"><img src="${i}" alt=""></div>`).join('');p.images.forEach((_,x)=>{const t=document.createElement('div');t.className=`dot ${x===0?'active':''}`;t.onclick=()=>switchImg(x);d.appendChild(t);});}else{c.innerHTML='<div class="carousel-img active"></div>';}
+    document.getElementById('modalName').textContent=p.name;document.getElementById('modalPrice').textContent=`${p.price}₽`;document.getElementById('modalDesc').textContent=p.description||'';document.getElementById('productModal').classList.add('active');}catch(e){currentProductId=null;}}
     function switchImg(i){document.querySelectorAll('.carousel-img').forEach((img,x)=>img.classList.toggle('active',x===i));document.querySelectorAll('.dot').forEach((d,x)=>d.classList.toggle('active',x===i));}
     function closeModal(){document.getElementById('productModal').classList.remove('active');}
-    function addToCart(){const p=products.find(x=>x.id===currentProductId),e=cart.find(x=>x.id===currentProductId);if(e)e.quantity+=1;else cart.push({id:currentProductId,name:p.name,price:p.price,image:p.main_image,quantity:1});saveCart();updateBadge();closeModal();if(WebApp)WebApp.showAlert('✓ Товар добавлен');}
+    function addToCart(){const p=products.find(x=>x.id===currentProductId);if(!p)return;const e=cart.find(x=>x.id===currentProductId);if(e)e.quantity+=1;else cart.push({id:currentProductId,name:p.name,price:p.price,image:p.main_image,quantity:1});saveCart();updateBadge();renderCart();closeModal();if(WebApp)WebApp.showAlert('✓ Товар добавлен');}
     function openCart(){renderCart();document.getElementById('cartModal').classList.add('active');}
     function closeCart(){document.getElementById('cartModal').classList.remove('active');}
-    function renderCart(){const i=document.getElementById('cartItems'),f=document.getElementById('cartFoot');if(cart.length===0){i.innerHTML='<div class="empty">Корзина пуста</div>';f.style.display='none';}else{i.innerHTML=cart.map((item,x)=>`<div class="cart-item"><div class="cart-item-img">${item.image?`<img src="${item.image}" alt="">`:''}</div><div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price}₽ × ${item.quantity} = ${item.price*item.quantity}₽</div><div class="qty-controls"><button class="qty-btn" onclick="changeQty(${x},-1)">−</button><div class="qty-val">${item.quantity}</div><button class="qty-btn" onclick="changeQty(${x},1)">+</button></div></div><button class="remove-item-btn" onclick="removeItem(${x})">✕</button></div>`).join('');const t=cart.reduce((s,x)=>s+(x.price*x.quantity),0);document.getElementById('cartSub').textContent=`${t}₽`;document.getElementById('cartTotal').textContent=`${t}₽`;f.style.display='block';}}
+    function renderCart(){const i=document.getElementById('cartItems'),f=document.getElementById('cartFoot');if(cart.length===0){i.innerHTML='<div class="empty">Корзина пуста</div>';f.style.display='none';}else{i.innerHTML=cart.map((item,x)=>`<div class="cart-item"><div class="cart-item-img">${item.image?`<img src="${item.image}" alt="">`:''}</div><div class="cart-item-info"><div class="cart-item-name">${item.name}</div><div class="cart-item-price">${item.price}₽ × ${item.quantity} = ${item.price*item.quantity}₽</div><div class="qty-controls"><button class="qty-btn" onclick="changeQty(${x},-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path></svg></button><div class="qty-val">${item.quantity}</div><button class="qty-btn" onclick="changeQty(${x},1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><button class="remove-item-btn" onclick="removeItem(${x})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button></div>`).join('');const t=cart.reduce((s,x)=>s+(x.price*x.quantity),0);document.getElementById('cartSub').textContent=`${t}₽`;document.getElementById('cartTotal').textContent=`${t}₽`;f.style.display='block';}}
     function changeQty(i,d){cart[i].quantity=Math.max(1,cart[i].quantity+d);saveCart();renderCart();}
     function removeItem(i){cart.splice(i,1);saveCart();updateBadge();renderCart();}
     function updateBadge(){const b=document.getElementById('cartBadge');if(cart.length===0)b.style.display='none';else{b.textContent=cart.length;b.style.display='flex';}}
