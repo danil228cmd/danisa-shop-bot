@@ -207,7 +207,7 @@ const handleTelegramMessage = (msg) => {
   const firstName = msg.from.first_name || 'User';
 
   // /start command - с кнопками Web App
-  if (text === '/start') {
+  if (text && text.startsWith('/start')) {
     const keyboard = [
       [
         {
@@ -259,7 +259,7 @@ const handleTelegramMessage = (msg) => {
   }
 
   // /admin command - shows admin menu only for admin user
-  if (text === '/admin') {
+  if (text && text.startsWith('/admin')) {
     if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
       const message = {
         chat_id: chatId,
