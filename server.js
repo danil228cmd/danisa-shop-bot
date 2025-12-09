@@ -23,8 +23,16 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '';
-const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '';
+// Поддержка нескольких админов через запятую: 123456,789012,345678
+const ADMIN_TELEGRAM_IDS = process.env.ADMIN_TELEGRAM_ID 
+  ? process.env.ADMIN_TELEGRAM_ID.split(',').map(id => id.trim())
+  : [];
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
+
+// Функция проверки админа
+const isAdmin = (userId) => {
+  return ADMIN_TELEGRAM_IDS.includes(userId.toString());
+};
 
 // Проверяем наличие PostgreSQL (DATABASE_PUBLIC_URL или DATABASE_URL)
 const DATABASE_URL = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL;
@@ -369,7 +377,8 @@ const handleTelegramMessage = (msg) => {
 
   if (text && text.startsWith('/start')) {
     const keyboard = [[{ text: '🛍️ Открыть магазин', web_app: { url: `${SERVER_URL}/miniapp/` } }]];
-    if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
+    // Проверяем является ли пользователь админом
+    if (isAdmin(userId)) {
       keyboard.push([{ text: '⚙️ Админ-панель', web_app: { url: `${SERVER_URL}/admin/` } }]);
     }
     sendTelegramRequest('/sendMessage', {
@@ -389,7 +398,8 @@ const handleTelegramMessage = (msg) => {
   }
 
   if (text && text.startsWith('/admin')) {
-    if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
+    // Проверяем является ли пользователь админом
+    if (isAdmin(userId)) {
       sendTelegramRequest('/sendMessage', {
         chat_id: chatId,
         text: `🔐 <b>Админ-панель</b>\n\nВойдите с паролем: <code>${ADMIN_PASSWORD}</code>`,
