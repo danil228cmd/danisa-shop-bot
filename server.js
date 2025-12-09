@@ -386,6 +386,12 @@ const server = http.createServer(async (req, res) => {
   console.log(`${req.method} ${pathname}`);
 
   // STATIC FILES
+  // Тестовая страница для отладки
+  if (pathname === '/test' || pathname === '/test/') {
+    serveFile(res, path.join(__dirname, 'public', 'test.html'));
+    return;
+  }
+
   if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
     serveFile(res, path.join(__dirname, 'public', 'admin', 'index.html'));
     return;

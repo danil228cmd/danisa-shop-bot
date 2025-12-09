@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 ТЕСТ - Проверка путей</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    .link {
+      display: block;
+      padding: 15px;
+      background: #007aff;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+    .link:hover { background: #0051d5; }
+    .admin { background: #ff3b30; }
+    .admin:hover { background: #d32f2f; }
+    .info {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+      margin: 20px 0;
+    }
+    code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🧪 Тестовая страница</h1>
+    <p>Эта страница поможет проверить, что пути работают правильно.</p>
+    
+    <div class="info">
+      <strong>Текущий URL:</strong><br>
+      <code id="currentUrl"></code>
+    </div>
+
+    <h2>Проверьте эти ссылки:</h2>
+    
+    <a href="/admin/" class="link admin">
+      🔐 Открыть АДМИН ПАНЕЛЬ<br>
+      <small style="opacity: 0.8;">/admin/</small>
+    </a>
+    
+    <a href="/" class="link">
+      🛍️ Открыть МАГАЗИН<br>
+      <small style="opacity: 0.8;">/</small>
+    </a>
+    
+    <a href="/miniapp/" class="link">
+      🛍️ Открыть МАГАЗИН (miniapp)<br>
+      <small style="opacity: 0.8;">/miniapp/</small>
+    </a>
+
+    <div class="info">
+      <strong>Что должно произойти:</strong>
+      <ul>
+        <li>Красная кнопка → Админ панель с формой входа</li>
+        <li>Синие кнопки → Магазин с товарами</li>
+      </ul>
+    </div>
+
+    <h2>Информация для отладки:</h2>
+    <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px;">
+      <div><strong>URL:</strong> <span id="url"></span></div>
+      <div><strong>Pathname:</strong> <span id="pathname"></span></div>
+      <div><strong>Host:</strong> <span id="host"></span></div>
+      <div><strong>Protocol:</strong> <span id="protocol"></span></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('currentUrl').textContent = window.location.href;
+    document.getElementById('url').textContent = window.location.href;
+    document.getElementById('pathname').textContent = window.location.pathname;
+    document.getElementById('host').textContent = window.location.host;
+    document.getElementById('protocol').textContent = window.location.protocol;
+  </script>
+</body>
+</html>
