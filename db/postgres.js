@@ -3,15 +3,32 @@ const fs = require('fs');
 const path = require('path');
 
 // Проверяем наличие DATABASE_URL (PostgreSQL)
-const DATABASE_URL = process.env.DATABASE_URL;
+// Используем DATABASE_PUBLIC_URL если доступен, иначе DATABASE_URL
+const DATABASE_URL = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL;
 const USE_POSTGRES = !!DATABASE_URL;
 
 let pool = null;
 
 if (USE_POSTGRES) {
+  // Заменяем внутренний адрес на внешний если нужно
+  let connectionString = DATABASE_URL;
+  if (connectionString.includes('postgres.railway.internal')) {
+    // Используем переменные окружения Railway для внешнего подключения
+    const PGHOST = process.env.PGHOST;
+    const PGPORT = process.env.PGPORT || 5432;
+    const PGUSER = process.env.PGUSER || 'postgres';
+    const PGPASSWORD = process.env.PGPASSWORD;
+    const PGDATABASE = process.env.PGDATABASE || 'railway';
+    
+    if (PGHOST && PGPASSWORD) {
+      connectionString = `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}`;
+      console.log('🔄 Используется внешнее подключение к PostgreSQL');
+    }
+  }
+  
   pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: DATABASE_URL.includes('railway') ? { rejectUnauthorized: false } : false
+    connectionString: connectionString,
+    ssl: connectionString.includes('railway') ? { rejectUnauthorized: false } : false
   });
 
   console.log('✅ Используется PostgreSQL база данных');
