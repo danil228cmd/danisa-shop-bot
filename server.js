@@ -584,12 +584,15 @@ const server = http.createServer(async (req, res) => {
     parseBody(req, async (err, data) => {
       const order = await API.createOrder(data.telegramUserId, data.username, data.contact, data.totalPrice, data.items || []);
       
+      // Парсим items если это строка
+      const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+      
       let orderText = `📦 <b>Новый заказ #${order.id}</b>\n\n`;
       orderText += `👤 <b>Пользователь:</b> @${order.username}\n`;
       orderText += `📞 <b>Контакт:</b> ${order.contact}\n`;
       orderText += `💰 <b>Сумма:</b> ${order.total_price}₽\n\n`;
       orderText += `<b>Товары:</b>\n`;
-      order.items.forEach((item, idx) => {
+      items.forEach((item, idx) => {
         orderText += `${idx + 1}. ${item.name} x${item.quantity} = ${item.price * item.quantity}₽\n`;
       });
       sendTelegramMessage(orderText);
