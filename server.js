@@ -113,6 +113,32 @@ const getNextId = (arr) => {
   return arr.length === 0 ? 1 : Math.max(...arr.map(item => item.id)) + 1;
 };
 
+// Валидация данных
+const validateProduct = (data) => {
+  const errors = [];
+  if (!data.name || data.name.trim().length === 0) errors.push('Название обязательно');
+  if (data.name && data.name.length > 200) errors.push('Название слишком длинное (макс 200 символов)');
+  if (!data.price || isNaN(data.price) || data.price <= 0) errors.push('Цена должна быть больше 0');
+  if (data.price > 1000000) errors.push('Цена слишком большая');
+  if (data.description && data.description.length > 1000) errors.push('Описание слишком длинное (макс 1000 символов)');
+  return errors;
+};
+
+const validateCategory = (data) => {
+  const errors = [];
+  if (!data.name || data.name.trim().length === 0) errors.push('Название обязательно');
+  if (data.name && data.name.length > 100) errors.push('Название слишком длинное (макс 100 символов)');
+  return errors;
+};
+
+const validateOrder = (data) => {
+  const errors = [];
+  if (!data.contact || data.contact.trim().length === 0) errors.push('Контакт обязателен');
+  if (!data.items || !Array.isArray(data.items) || data.items.length === 0) errors.push('Корзина пуста');
+  if (!data.totalPrice || data.totalPrice <= 0) errors.push('Неверная сумма заказа');
+  return errors;
+};
+
 // === API WRAPPER ===
 const API = {
   async getCategories() {
@@ -196,8 +222,19 @@ const API = {
   },
   
   async deleteProduct(id) {
-    if (USE_POSTGRES) return await dbModule.db.deleteProduct(id);
+    if (USE_POSTGRES) {
+      await dbModule.db.deleteProduct(id);
+      // Очищаем товар из всех корзин
+      await dbModule.db.removeProductFromCarts(id);
+      return;
+    }
     products = products.filter(p => p.id !== id);
+    // Очищаем из JSON корзин
+    Object.keys(carts).forEach(userId => {
+      if (carts[userId] && carts[userId].items) {
+        carts[userId].items = carts[userId].items.filter(item => item.id !== id);
+      }
+    });
     saveAll();
   },
   
@@ -414,8 +451,21 @@ const server = http.createServer(async (req, res) => {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-      const cat = await API.createCategory(data.name);
-      sendJSON(res, 200, { id: cat.id, name: cat.name });
+      
+      // Валидация
+      const errors = validateCategory(data);
+      if (errors.length > 0) {
+        sendJSON(res, 400, { error: errors.join(', ') });
+        return;
+      }
+      
+      try {
+        const cat = await API.createCategory(data.name);
+        sendJSON(res, 200, { id: cat.id, name: cat.name });
+      } catch (error) {
+        console.error('Ошибка создания категории:', error);
+        sendJSON(res, 500, { error: 'Ошибка создания категории' });
+      }
     });
     return;
   }
@@ -495,8 +545,21 @@ const server = http.createServer(async (req, res) => {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-      const prod = await API.createProduct(data.subcategoryId, data.name, data.description, data.price, data.imageData);
-      sendJSON(res, 200, { id: prod.id, name: prod.name });
+      
+      // Валидация
+      const errors = validateProduct(data);
+      if (errors.length > 0) {
+        sendJSON(res, 400, { error: errors.join(', ') });
+        return;
+      }
+      
+      try {
+        const prod = await API.createProduct(data.subcategoryId, data.name, data.description, data.price, data.imageData);
+        sendJSON(res, 200, { id: prod.id, name: prod.name });
+      } catch (error) {
+        console.error('Ошибка создания товара:', error);
+        sendJSON(res, 500, { error: 'Ошибка создания товара' });
+      }
     });
     return;
   }
@@ -570,22 +633,34 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/orders' && req.method === 'POST') {
     parseBody(req, async (err, data) => {
-      const order = await API.createOrder(data.telegramUserId, data.username, data.contact, data.totalPrice, data.items || []);
+      // Валидация
+      const errors = validateOrder(data);
+      if (errors.length > 0) {
+        sendJSON(res, 400, { error: errors.join(', ') });
+        return;
+      }
       
-      // Парсим items если это строка
-      const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-      
-      let orderText = `📦 <b>Новый заказ #${order.id}</b>\n\n`;
-      orderText += `👤 <b>Пользователь:</b> @${order.username}\n`;
-      orderText += `📞 <b>Контакт:</b> ${order.contact}\n`;
-      orderText += `💰 <b>Сумма:</b> ${order.total_price}₽\n\n`;
-      orderText += `<b>Товары:</b>\n`;
-      items.forEach((item, idx) => {
-        orderText += `${idx + 1}. ${item.name} x${item.quantity} = ${item.price * item.quantity}₽\n`;
-      });
-      sendTelegramMessage(orderText);
+      try {
+        const order = await API.createOrder(data.telegramUserId, data.username, data.contact, data.totalPrice, data.items || []);
+        
+        // Парсим items если это строка
+        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+        
+        let orderText = `📦 <b>Новый заказ #${order.id}</b>\n\n`;
+        orderText += `👤 <b>Пользователь:</b> @${order.username}\n`;
+        orderText += `📞 <b>Контакт:</b> ${order.contact}\n`;
+        orderText += `💰 <b>Сумма:</b> ${order.total_price}₽\n\n`;
+        orderText += `<b>Товары:</b>\n`;
+        items.forEach((item, idx) => {
+          orderText += `${idx + 1}. ${item.name} x${item.quantity} = ${item.price * item.quantity}₽\n`;
+        });
+        sendTelegramMessage(orderText);
 
-      sendJSON(res, 200, { id: order.id, status: 'success' });
+        sendJSON(res, 200, { id: order.id, status: 'success' });
+      } catch (error) {
+        console.error('Ошибка создания заказа:', error);
+        sendJSON(res, 500, { error: 'Ошибка создания заказа' });
+      }
     });
     return;
   }

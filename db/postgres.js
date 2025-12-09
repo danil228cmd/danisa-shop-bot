@@ -264,6 +264,31 @@ const db = {
        DO UPDATE SET items = $2, updated_at = CURRENT_TIMESTAMP`,
       [userId, JSON.stringify(items)]
     );
+  },
+
+  // Очистить удаленный товар из всех корзин
+  async removeProductFromCarts(productId) {
+    if (!USE_POSTGRES) return;
+    try {
+      // Получаем все корзины
+      const result = await pool.query('SELECT telegram_user_id, items FROM carts');
+      
+      // Обновляем каждую корзину
+      for (const cart of result.rows) {
+        const items = JSON.parse(cart.items || '[]');
+        const filteredItems = items.filter(item => item.id !== productId);
+        
+        if (items.length !== filteredItems.length) {
+          // Товар был в корзине, обновляем
+          await pool.query(
+            'UPDATE carts SET items = $1, updated_at = CURRENT_TIMESTAMP WHERE telegram_user_id = $2',
+            [JSON.stringify(filteredItems), cart.telegram_user_id]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка очистки корзин:', error);
+    }
   }
 };
 
