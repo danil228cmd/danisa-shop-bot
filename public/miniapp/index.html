@@ -354,11 +354,13 @@
         <div class="checkout-form">
           <div class="field">
             <label>Ваше имя</label>
-            <input type="text" id="name" placeholder="Введите ваше имя" autocomplete="name">
+            <input type="text" id="name" placeholder="Введите ваше имя" autocomplete="name" 
+                   onkeypress="if(event.key==='Enter'){event.preventDefault();document.getElementById('phone').focus();}">
           </div>
           <div class="field">
             <label>Контакт для связи</label>
-            <input type="tel" id="phone" placeholder="Телефон или @username" autocomplete="tel">
+            <input type="tel" id="phone" placeholder="Телефон или @username" autocomplete="tel"
+                   onkeypress="if(event.key==='Enter'){event.preventDefault();submitOrder();}">
           </div>
         </div>
       </div>
