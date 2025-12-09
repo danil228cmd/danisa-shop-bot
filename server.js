@@ -100,16 +100,11 @@ const saveAll = () => {
 const saveBase64Image = (imageData) => {
   try {
     if (!imageData || !imageData.startsWith('data:image')) return '';
-    const matches = imageData.match(/^data:(image\/\w+);base64,(.+)$/);
-    if (!matches) return '';
-    const ext = matches[1].split('/')[1];
-    const buffer = Buffer.from(matches[2], 'base64');
-    const fileName = `product-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const filePath = path.join(__dirname, 'uploads', fileName);
-    fs.writeFileSync(filePath, buffer);
-    return `/uploads/${fileName}`;
+    // Просто возвращаем base64 - будем хранить в базе данных
+    // Это решает проблему с пропаданием изображений на Railway
+    return imageData;
   } catch (e) {
-    console.error('Ошибка сохранения изображения:', e.message);
+    console.error('Ошибка обработки изображения:', e.message);
     return '';
   }
 };
@@ -403,15 +398,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname.startsWith('/uploads/')) {
-    const filePath = path.join(__dirname, 'uploads', pathname.substring(9));
-    if (fs.existsSync(filePath)) {
-      const ext = path.extname(filePath).toLowerCase();
-      const contentType = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif' }[ext] || 'image/jpeg';
-      serveFile(res, filePath, contentType);
-      return;
-    }
-  }
+  // Изображения теперь хранятся как base64 в базе данных
+  // Роут /uploads/ больше не нужен
 
   // API ROUTES
   if (pathname === '/api/categories' && req.method === 'GET') {
