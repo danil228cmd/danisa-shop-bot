@@ -26,8 +26,9 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '';
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
-// Проверяем наличие PostgreSQL
-const USE_POSTGRES = !!process.env.DATABASE_URL;
+// Проверяем наличие PostgreSQL (DATABASE_PUBLIC_URL или DATABASE_URL)
+const DATABASE_URL = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL;
+const USE_POSTGRES = !!DATABASE_URL;
 let dbModule = null;
 
 if (USE_POSTGRES) {
