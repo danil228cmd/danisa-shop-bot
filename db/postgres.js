@@ -28,7 +28,11 @@ if (USE_POSTGRES) {
   
   pool = new Pool({
     connectionString: connectionString,
-    ssl: connectionString.includes('railway') ? { rejectUnauthorized: false } : false
+    ssl: connectionString.includes('railway') ? { rejectUnauthorized: false } : false,
+    // Оптимизация пула соединений
+    max: 20, // максимум соединений
+    idleTimeoutMillis: 30000, // закрывать неактивные соединения через 30 сек
+    connectionTimeoutMillis: 10000, // таймаут подключения 10 сек
   });
 
   console.log('✅ Используется PostgreSQL база данных');
