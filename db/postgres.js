@@ -244,6 +244,14 @@ const db = {
     await pool.query('DELETE FROM orders WHERE id = $1', [id]);
   },
 
+  async completeOrder(id) {
+    if (!USE_POSTGRES) return;
+    await pool.query(
+      'UPDATE orders SET status = $1, completed_at = CURRENT_TIMESTAMP WHERE id = $2',
+      ['completed', id]
+    );
+  },
+
   // Корзины
   async getCart(userId) {
     if (!USE_POSTGRES) return { items: [] };

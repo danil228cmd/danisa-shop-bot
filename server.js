@@ -273,6 +273,16 @@ const API = {
       saveAll();
     }
   },
+
+  async completeOrder(id) {
+    if (USE_POSTGRES) return await dbModule.db.completeOrder(id);
+    const order = orders.find(o => o.id === id);
+    if (order) {
+      order.status = 'completed';
+      order.completed_at = new Date().toISOString();
+      saveAll();
+    }
+  },
   
   async getCart(userId) {
     if (USE_POSTGRES) return await dbModule.db.getCart(userId);
@@ -672,14 +682,23 @@ const server = http.createServer(async (req, res) => {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-      const order = await API.getOrder(id);
-      if (!order) {
-        sendJSON(res, 404, { error: 'Заказ не найден' });
-        return;
+      
+      try {
+        const order = await API.getOrder(id);
+        if (!order) {
+          sendJSON(res, 404, { error: 'Заказ не найден' });
+          return;
+        }
+        
+        // Меняем статус на completed вместо удаления
+        await API.completeOrder(id);
+        
+        sendTelegramMessage(`✅ Заказ #${order.id} завершён и перемещен в архив.`);
+        sendJSON(res, 200, { success: true });
+      } catch (error) {
+        console.error('Ошибка завершения заказа:', error);
+        sendJSON(res, 500, { error: 'Ошибка завершения заказа' });
       }
-      await API.deleteOrder(id);
-      sendTelegramMessage(`✅ Заказ #${order.id} завершён и удалён.`);
-      sendJSON(res, 200, { success: true });
     });
     return;
   }
