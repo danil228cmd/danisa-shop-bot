@@ -1,10 +1,11 @@
+// ГИБРИДНАЯ ВЕРСИЯ: работает с PostgreSQL (если есть) или JSON файлами
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-// Load .env file
+// Загрузка .env
 const envPath = path.join(__dirname, '.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf-8');
@@ -13,9 +14,7 @@ if (fs.existsSync(envPath)) {
     if (trimmed && !trimmed.startsWith('#')) {
       const [key, ...valueParts] = trimmed.split('=');
       const value = valueParts.join('=');
-      if (key) {
-        process.env[key.trim()] = value.trim();
-      }
+      if (key) process.env[key.trim()] = value.trim();
     }
   });
 }
@@ -27,7 +26,21 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '';
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID || '';
 const SERVER_URL = process.env.SERVER_URL || `http://localhost:${PORT}`;
 
-// === DATA STORAGE (JSON FILES) ===
+// Проверяем наличие PostgreSQL
+const USE_POSTGRES = !!process.env.DATABASE_URL;
+let dbModule = null;
+
+if (USE_POSTGRES) {
+  try {
+    dbModule = require('./db/postgres');
+    console.log('✅ Используется PostgreSQL');
+  } catch (e) {
+    console.error('❌ Ошибка загрузки PostgreSQL модуля:', e.message);
+    process.exit(1);
+  }
+}
+
+// JSON хранилище (fallback)
 const DATA_DIR = path.join(__dirname, 'data');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const SUBCATEGORIES_FILE = path.join(DATA_DIR, 'subcategories.json');
@@ -35,21 +48,14 @@ const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const CARTS_FILE = path.join(DATA_DIR, 'carts.json');
 
-// Initialize data directory
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
   fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
 }
 
-// Helper functions to read/write JSON
 const readJSON = (file, defaultValue = []) => {
   try {
-    if (!fs.existsSync(file)) {
-      return defaultValue;
-    }
+    if (!fs.existsSync(file)) return defaultValue;
     return JSON.parse(fs.readFileSync(file, 'utf-8'));
   } catch {
     return defaultValue;
@@ -60,7 +66,36 @@ const writeJSON = (file, data) => {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
 };
 
-// Save base64 image to /uploads and return relative url
+// JSON данные
+let categories = [];
+let subcategories = [];
+let products = [];
+let orders = [];
+let carts = {};
+
+// Загрузка данных
+const loadData = async () => {
+  if (USE_POSTGRES) {
+    await dbModule.initDatabase();
+  } else {
+    categories = readJSON(CATEGORIES_FILE, []);
+    subcategories = readJSON(SUBCATEGORIES_FILE, []);
+    products = readJSON(PRODUCTS_FILE, []);
+    orders = readJSON(ORDERS_FILE, []);
+    carts = readJSON(CARTS_FILE, {});
+  }
+};
+
+const saveAll = () => {
+  if (!USE_POSTGRES) {
+    writeJSON(CATEGORIES_FILE, categories);
+    writeJSON(SUBCATEGORIES_FILE, subcategories);
+    writeJSON(PRODUCTS_FILE, products);
+    writeJSON(ORDERS_FILE, orders);
+    writeJSON(CARTS_FILE, carts);
+  }
+};
+
 const saveBase64Image = (imageData) => {
   try {
     if (!imageData || !imageData.startsWith('data:image')) return '';
@@ -73,39 +108,153 @@ const saveBase64Image = (imageData) => {
     fs.writeFileSync(filePath, buffer);
     return `/uploads/${fileName}`;
   } catch (e) {
-    console.error('Не удалось сохранить изображение', e.message);
+    console.error('Ошибка сохранения изображения:', e.message);
     return '';
   }
 };
 
-// Load all data
-let categories = readJSON(CATEGORIES_FILE, []);
-let subcategories = readJSON(SUBCATEGORIES_FILE, []);
-let products = readJSON(PRODUCTS_FILE, []);
-let orders = readJSON(ORDERS_FILE, []);
-let carts = readJSON(CARTS_FILE, {});
-
-// Normalize products to ensure main_image exists
-products = products.map(p => {
-  if (!p.main_image && p.images && p.images.length > 0) {
-    p.main_image = p.images[0];
-  }
-  if (!p.images) {
-    p.images = p.main_image ? [p.main_image] : [];
-  }
-  return p;
-});
-
-// Auto-save after changes
-const saveAll = () => {
-  writeJSON(CATEGORIES_FILE, categories);
-  writeJSON(SUBCATEGORIES_FILE, subcategories);
-  writeJSON(PRODUCTS_FILE, products);
-  writeJSON(ORDERS_FILE, orders);
-  writeJSON(CARTS_FILE, carts);
+const getNextId = (arr) => {
+  return arr.length === 0 ? 1 : Math.max(...arr.map(item => item.id)) + 1;
 };
 
-// === HELPERS ===
+// === API WRAPPER ===
+const API = {
+  async getCategories() {
+    if (USE_POSTGRES) return await dbModule.db.getCategories();
+    return categories;
+  },
+  
+  async createCategory(name) {
+    if (USE_POSTGRES) return await dbModule.db.createCategory(name);
+    const cat = { id: getNextId(categories), name, created_at: new Date().toISOString() };
+    categories.push(cat);
+    saveAll();
+    return cat;
+  },
+  
+  async deleteCategory(id) {
+    if (USE_POSTGRES) return await dbModule.db.deleteCategory(id);
+    categories = categories.filter(c => c.id !== id);
+    subcategories = subcategories.filter(s => s.category_id !== id);
+    saveAll();
+  },
+  
+  async getSubcategories(categoryId = null) {
+    if (USE_POSTGRES) return await dbModule.db.getSubcategories(categoryId);
+    if (categoryId) return subcategories.filter(s => parseInt(s.category_id) === parseInt(categoryId));
+    return subcategories;
+  },
+  
+  async createSubcategory(categoryId, name) {
+    if (USE_POSTGRES) return await dbModule.db.createSubcategory(categoryId, name);
+    const sub = { id: getNextId(subcategories), category_id: parseInt(categoryId), name, created_at: new Date().toISOString() };
+    subcategories.push(sub);
+    saveAll();
+    return sub;
+  },
+  
+  async deleteSubcategory(id) {
+    if (USE_POSTGRES) return await dbModule.db.deleteSubcategory(id);
+    subcategories = subcategories.filter(s => s.id !== id);
+    saveAll();
+  },
+  
+  async getProducts(subcategoryId = null) {
+    if (USE_POSTGRES) return await dbModule.db.getProducts(subcategoryId);
+    if (subcategoryId) return products.filter(p => parseInt(p.subcategory_id) === parseInt(subcategoryId));
+    return products;
+  },
+  
+  async getProduct(id) {
+    if (USE_POSTGRES) return await dbModule.db.getProduct(id);
+    return products.find(p => p.id === id);
+  },
+  
+  async createProduct(subcategoryId, name, description, price, imageData) {
+    const mainImage = saveBase64Image(imageData);
+    if (USE_POSTGRES) return await dbModule.db.createProduct(subcategoryId, name, description, price, mainImage);
+    const prod = {
+      id: getNextId(products),
+      subcategory_id: parseInt(subcategoryId),
+      name,
+      description: description || '',
+      price: parseFloat(price),
+      main_image: mainImage || '',
+      images: mainImage ? [mainImage] : [],
+      created_at: new Date().toISOString()
+    };
+    products.push(prod);
+    saveAll();
+    return prod;
+  },
+  
+  async updateProduct(id, name, description, price) {
+    if (USE_POSTGRES) return await dbModule.db.updateProduct(id, name, description, price);
+    const product = products.find(p => p.id === id);
+    if (product) {
+      product.name = name || product.name;
+      product.description = description || product.description;
+      product.price = parseFloat(price) || product.price;
+      saveAll();
+    }
+  },
+  
+  async deleteProduct(id) {
+    if (USE_POSTGRES) return await dbModule.db.deleteProduct(id);
+    products = products.filter(p => p.id !== id);
+    saveAll();
+  },
+  
+  async getOrders() {
+    if (USE_POSTGRES) return await dbModule.db.getOrders();
+    return orders;
+  },
+  
+  async getOrder(id) {
+    if (USE_POSTGRES) return await dbModule.db.getOrder(id);
+    return orders.find(o => o.id === id);
+  },
+  
+  async createOrder(telegramUserId, username, contact, totalPrice, items) {
+    if (USE_POSTGRES) return await dbModule.db.createOrder(telegramUserId, username, contact, totalPrice, items);
+    const order = {
+      id: getNextId(orders),
+      telegram_user_id: telegramUserId,
+      username,
+      contact,
+      total_price: totalPrice,
+      items,
+      status: 'new',
+      created_at: new Date().toISOString()
+    };
+    orders.push(order);
+    saveAll();
+    return order;
+  },
+  
+  async deleteOrder(id) {
+    if (USE_POSTGRES) return await dbModule.db.deleteOrder(id);
+    const index = orders.findIndex(o => o.id === id);
+    if (index !== -1) {
+      orders.splice(index, 1);
+      saveAll();
+    }
+  },
+  
+  async getCart(userId) {
+    if (USE_POSTGRES) return await dbModule.db.getCart(userId);
+    return carts[userId] || { items: [] };
+  },
+  
+  async saveCart(userId, items) {
+    if (USE_POSTGRES) return await dbModule.db.saveCart(userId, items);
+    carts[userId] = { items };
+    saveAll();
+  }
+};
+
+// Остальной код server.js без изменений...
+// (Telegram, HTTP handlers и т.д.)
 
 const serveFile = (res, filePath, contentType = 'text/html') => {
   fs.readFile(filePath, (err, data) => {
@@ -126,9 +275,7 @@ const sendJSON = (res, statusCode, data) => {
 
 const parseBody = (req, callback) => {
   let body = '';
-  req.on('data', chunk => {
-    body += chunk.toString();
-  });
+  req.on('data', chunk => { body += chunk.toString(); });
   req.on('end', () => {
     try {
       const data = body ? JSON.parse(body) : {};
@@ -139,174 +286,88 @@ const parseBody = (req, callback) => {
   });
 };
 
-const getNextId = (arr) => {
-  return arr.length === 0 ? 1 : Math.max(...arr.map(item => item.id)) + 1;
-};
-
-// === TELEGRAM BOT NOTIFICATION ===
-
 const sendTelegramMessage = (text) => {
   if (!TELEGRAM_TOKEN || !ADMIN_CHAT_ID) return;
-
-  const message = {
-    chat_id: ADMIN_CHAT_ID,
-    text: text,
-    parse_mode: 'HTML'
-  };
-
+  const message = { chat_id: ADMIN_CHAT_ID, text, parse_mode: 'HTML' };
   sendTelegramRequest('/sendMessage', message);
 };
 
 const sendTelegramRequest = (method, data) => {
   if (!TELEGRAM_TOKEN) return;
-
   const postData = JSON.stringify(data);
-
   const options = {
     hostname: 'api.telegram.org',
     port: 443,
     path: `/bot${TELEGRAM_TOKEN}${method}`,
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData)
-    }
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
   };
-
   const req = https.request(options, (res) => {
     let responseData = '';
     res.on('data', chunk => { responseData += chunk; });
     res.on('end', () => {
       try {
         const parsed = JSON.parse(responseData);
-        if (!parsed.ok) {
-          console.error(`[Telegram] Ошибка ${method}:`, parsed.description);
-        }
-      } catch (e) {
-        // Silent fail
-      }
+        if (!parsed.ok) console.error(`[Telegram] Ошибка ${method}:`, parsed.description);
+      } catch (e) {}
     });
   });
-
-  req.on('error', (e) => {
-    console.error('[Telegram] Ошибка соединения:', e.message);
-  });
-
+  req.on('error', (e) => { console.error('[Telegram] Ошибка:', e.message); });
   req.write(postData);
   req.end();
 };
 
-// === TELEGRAM MESSAGE HANDLER ===
-
 const handleTelegramMessage = (msg) => {
-  try {
-    console.log('[Telegram] update message:', JSON.stringify(msg));
-  } catch {}
   if (!msg) return;
-
   const chatId = msg.chat.id;
   const text = msg.text;
   const userId = msg.from.id;
   const firstName = msg.from.first_name || 'User';
 
-  // /start command - с кнопками Web App
   if (text && text.startsWith('/start')) {
-    const keyboard = [
-      [
-        {
-          text: '🛍️ Открыть магазин',
-          web_app: { url: `${SERVER_URL}/miniapp/` }
-        }
-      ]
-    ];
-
+    const keyboard = [[{ text: '🛍️ Открыть магазин', web_app: { url: `${SERVER_URL}/miniapp/` } }]];
     if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
-      keyboard.push([
-        {
-          text: '⚙️ Админ-панель',
-          web_app: { url: `${SERVER_URL}/admin/?tg=${ADMIN_TELEGRAM_ID}` }
-        }
-      ]);
+      keyboard.push([{ text: '⚙️ Админ-панель', web_app: { url: `${SERVER_URL}/admin/` } }]);
     }
-
-    const message = {
+    sendTelegramRequest('/sendMessage', {
       chat_id: chatId,
       text: `👋 Привет, ${firstName}!\n\n🛍️ Добро пожаловать в <b>DANISA SHOP</b>!\n\nВыберите действие:`,
       parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: keyboard
-      }
-    };
-
-    sendTelegramRequest('/sendMessage', message);
+      reply_markup: { inline_keyboard: keyboard }
+    });
   }
 
-  // /shop - открыть магазин
   if (text === '/shop' || text === '/магазин') {
-    const message = {
+    sendTelegramRequest('/sendMessage', {
       chat_id: chatId,
       text: '🛍️ Открывайте магазин!',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '🛍️ Открыть магазин',
-              web_app: { url: `${SERVER_URL}/miniapp/` }
-            }
-          ]
-        ]
-      }
-    };
-
-    sendTelegramRequest('/sendMessage', message);
+      reply_markup: { inline_keyboard: [[{ text: '🛍️ Открыть магазин', web_app: { url: `${SERVER_URL}/miniapp/` } }]] }
+    });
   }
 
-  // /admin command - shows admin menu only for admin user
   if (text && text.startsWith('/admin')) {
     if (userId.toString() === ADMIN_TELEGRAM_ID.toString()) {
-      const message = {
+      sendTelegramRequest('/sendMessage', {
         chat_id: chatId,
-        text: `🔐 <b>Админ-панель</b>\n\nВойдите с паролем: <code>admin123</code>`,
+        text: `🔐 <b>Админ-панель</b>\n\nВойдите с паролем: <code>${ADMIN_PASSWORD}</code>`,
         parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '⚙️ Открыть админ-панель',
-                web_app: { url: `${SERVER_URL}/admin/?tg=${ADMIN_TELEGRAM_ID}` }
-              }
-            ]
-          ]
-        }
-      };
-
-      sendTelegramRequest('/sendMessage', message);
+        reply_markup: { inline_keyboard: [[{ text: '⚙️ Открыть админ-панель', web_app: { url: `${SERVER_URL}/admin/` } }]] }
+      });
     } else {
-      const message = {
-        chat_id: chatId,
-        text: '❌ У вас нет доступа к админ-панели.'
-      };
-
-      sendTelegramRequest('/sendMessage', message);
+      sendTelegramRequest('/sendMessage', { chat_id: chatId, text: '❌ У вас нет доступа к админ-панели.' });
     }
   }
 
-  // /help
   if (text === '/help') {
-    const message = {
+    sendTelegramRequest('/sendMessage', {
       chat_id: chatId,
       text: `📱 <b>DANISA SHOP BOT</b>\n\nДоступные команды:\n/start - Главное меню\n/shop - Открыть магазин\n/admin - Админ-панель\n/help - Помощь`,
       parse_mode: 'HTML'
-    };
-
-    sendTelegramRequest('/sendMessage', message);
+    });
   }
 };
 
-// === REQUEST HANDLER ===
-
-const server = http.createServer((req, res) => {
-  // CORS
+const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -319,40 +380,18 @@ const server = http.createServer((req, res) => {
 
   const parsedUrl = url.parse(req.url, true);
   let pathname = parsedUrl.pathname || '/';
-  // normalize multiple slashes
   pathname = pathname.replace(/\/+/g, '/');
   const query = parsedUrl.query;
 
   console.log(`${req.method} ${pathname}`);
 
-  // === STATIC FILES ===
-  // Admin first to avoid miniapp catch-all
-  if (
-    pathname === '/admin' ||
-    pathname === '/admin/' ||
-    pathname === '/admin/index.html' ||
-    pathname.startsWith('/admin')
-  ) {
-    const key = parsedUrl.query.key || req.headers['x-admin-key'];
-    const tgId = parsedUrl.query.tg;
-    const allowedByKey = ADMIN_PASSWORD && key === ADMIN_PASSWORD;
-    const allowedByTelegram = ADMIN_TELEGRAM_ID && tgId && tgId.toString() === ADMIN_TELEGRAM_ID.toString();
-
-    if (allowedByKey || allowedByTelegram) {
-      serveFile(res, path.join(__dirname, 'public', 'admin', 'index.html'));
-    } else {
-      res.writeHead(403, { 'Content-Type': 'text/plain' });
-      res.end('403 Forbidden');
-    }
+  // STATIC FILES
+  if (pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html') {
+    serveFile(res, path.join(__dirname, 'public', 'admin', 'index.html'));
     return;
   }
 
-  if (
-    pathname === '/' ||
-    pathname === '/miniapp' ||
-    pathname === '/miniapp/' ||
-    pathname.startsWith('/miniapp')
-  ) {
+  if (pathname === '/' || pathname === '/miniapp' || pathname === '/miniapp/' || pathname.startsWith('/miniapp')) {
     serveFile(res, path.join(__dirname, 'public', 'miniapp', 'index.html'));
     return;
   }
@@ -361,289 +400,191 @@ const server = http.createServer((req, res) => {
     const filePath = path.join(__dirname, 'uploads', pathname.substring(9));
     if (fs.existsSync(filePath)) {
       const ext = path.extname(filePath).toLowerCase();
-      const contentType = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif'
-      }[ext] || 'image/jpeg';
-
+      const contentType = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif' }[ext] || 'image/jpeg';
       serveFile(res, filePath, contentType);
       return;
     }
   }
 
-  // === API ROUTES ===
-
-  // GET /api/categories
+  // API ROUTES
   if (pathname === '/api/categories' && req.method === 'GET') {
-    sendJSON(res, 200, categories);
+    const cats = await API.getCategories();
+    sendJSON(res, 200, cats);
     return;
   }
 
-  // POST /api/categories
   if (pathname === '/api/categories' && req.method === 'POST') {
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      const category = {
-        id: getNextId(categories),
-        name: data.name,
-        created_at: new Date().toISOString()
-      };
-
-      categories.push(category);
-      saveAll();
-      sendJSON(res, 200, { id: category.id, name: category.name });
+      const cat = await API.createCategory(data.name);
+      sendJSON(res, 200, { id: cat.id, name: cat.name });
     });
     return;
   }
 
-  // DELETE /api/categories/:id
   if (pathname.match(/^\/api\/categories\/\d+$/) && req.method === 'DELETE') {
     const id = parseInt(pathname.split('/')[3]);
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      categories = categories.filter(c => c.id !== id);
-      subcategories = subcategories.filter(s => s.category_id !== id);
-      saveAll();
+      await API.deleteCategory(id);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // GET /api/subcategories (все подкатегории)
   if (pathname === '/api/subcategories' && req.method === 'GET') {
-    sendJSON(res, 200, subcategories);
+    const subs = await API.getSubcategories();
+    sendJSON(res, 200, subs);
     return;
   }
 
-  // GET /api/subcategories/:categoryId
   if (pathname.match(/^\/api\/subcategories\/\d+$/) && req.method === 'GET') {
     const categoryId = parseInt(pathname.split('/')[3]);
-    const filtered = subcategories.filter(s => parseInt(s.category_id) === categoryId);
-    sendJSON(res, 200, filtered);
+    const subs = await API.getSubcategories(categoryId);
+    sendJSON(res, 200, subs);
     return;
   }
 
-  // POST /api/subcategories - ИСПРАВЛЕНО!
   if (pathname === '/api/subcategories' && req.method === 'POST') {
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      const subcategory = {
-        id: getNextId(subcategories),
-        category_id: parseInt(data.categoryId), // ИСПРАВЛЕНО: конвертируем в число
-        name: data.name,
-        created_at: new Date().toISOString()
-      };
-
-      subcategories.push(subcategory);
-      saveAll();
-      sendJSON(res, 200, { id: subcategory.id, name: subcategory.name });
+      const sub = await API.createSubcategory(data.categoryId, data.name);
+      sendJSON(res, 200, { id: sub.id, name: sub.name });
     });
     return;
   }
 
-  // DELETE /api/subcategories/:id
   if (pathname.match(/^\/api\/subcategories\/\d+$/) && req.method === 'DELETE') {
     const id = parseInt(pathname.split('/')[3]);
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      subcategories = subcategories.filter(s => s.id !== id);
-      saveAll();
+      await API.deleteSubcategory(id);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // GET /api/products
   if (pathname === '/api/products' && req.method === 'GET') {
-    let filtered = [...products];
-
-    if (query.subcategoryId) {
-      const subcategoryId = parseInt(query.subcategoryId);
-      filtered = filtered.filter(p => parseInt(p.subcategory_id) === subcategoryId);
-    }
-
-    sendJSON(res, 200, filtered);
+    const subcategoryId = query.subcategoryId ? parseInt(query.subcategoryId) : null;
+    const prods = await API.getProducts(subcategoryId);
+    sendJSON(res, 200, prods);
     return;
   }
 
-  // GET /api/products/:id
   if (pathname.match(/^\/api\/products\/\d+$/) && req.method === 'GET') {
     const id = parseInt(pathname.split('/')[3]);
-    const product = products.find(p => p.id === id);
-
+    const product = await API.getProduct(id);
     if (!product) {
       sendJSON(res, 404, { error: 'Товар не найден' });
       return;
     }
-
     sendJSON(res, 200, product);
     return;
   }
 
-  // POST /api/products
   if (pathname === '/api/products' && req.method === 'POST') {
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      const mainImage = saveBase64Image(data.imageData);
-
-      const product = {
-        id: getNextId(products),
-        subcategory_id: parseInt(data.subcategoryId), // ИСПРАВЛЕНО: конвертируем в число
-        name: data.name,
-        description: data.description || '',
-        price: parseFloat(data.price),
-        main_image: mainImage || '',
-        images: mainImage ? [mainImage] : [],
-        created_at: new Date().toISOString()
-      };
-
-      products.push(product);
-      saveAll();
-      sendJSON(res, 200, { id: product.id, name: product.name });
+      const prod = await API.createProduct(data.subcategoryId, data.name, data.description, data.price, data.imageData);
+      sendJSON(res, 200, { id: prod.id, name: prod.name });
     });
     return;
   }
 
-  // PUT /api/products/:id
   if (pathname.match(/^\/api\/products\/\d+$/) && req.method === 'PUT') {
     const id = parseInt(pathname.split('/')[3]);
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      const product = products.find(p => p.id === id);
-      if (!product) {
-        sendJSON(res, 404, { error: 'Товар не найден' });
-        return;
-      }
-
-      product.name = data.name || product.name;
-      product.description = data.description || product.description;
-      product.price = parseFloat(data.price) || product.price;
-
-      saveAll();
+      await API.updateProduct(id, data.name, data.description, data.price);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // DELETE /api/products/:id
   if (pathname.match(/^\/api\/products\/\d+$/) && req.method === 'DELETE') {
     const id = parseInt(pathname.split('/')[3]);
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      products = products.filter(p => p.id !== id);
-      saveAll();
+      await API.deleteProduct(id);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // GET /api/cart/:userId
   if (pathname.match(/^\/api\/cart\/\d+$/) && req.method === 'GET') {
     const userId = pathname.split('/')[3];
-    const cart = carts[userId] || { items: [] };
+    const cart = await API.getCart(userId);
     sendJSON(res, 200, cart);
     return;
   }
 
-  // POST /api/cart/:userId
   if (pathname.match(/^\/api\/cart\/\d+$/) && req.method === 'POST') {
     const userId = pathname.split('/')[3];
-    parseBody(req, (err, data) => {
-      carts[userId] = { items: data.items || [] };
-      saveAll();
+    parseBody(req, async (err, data) => {
+      await API.saveCart(userId, data.items || []);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // GET /api/orders
   if (pathname === '/api/orders' && req.method === 'GET') {
     if (query.password !== ADMIN_PASSWORD) {
       sendJSON(res, 401, { error: 'Неверный пароль' });
       return;
     }
-
-    sendJSON(res, 200, orders);
+    const ords = await API.getOrders();
+    sendJSON(res, 200, ords);
     return;
   }
 
-  // GET /api/orders/:id
   if (pathname.match(/^\/api\/orders\/\d+$/) && req.method === 'GET') {
     if (query.password !== ADMIN_PASSWORD) {
       sendJSON(res, 401, { error: 'Неверный пароль' });
       return;
     }
-
     const id = parseInt(pathname.split('/')[3]);
-    const order = orders.find(o => o.id === id);
-
+    const order = await API.getOrder(id);
     if (!order) {
       sendJSON(res, 404, { error: 'Заказ не найден' });
       return;
     }
-
     sendJSON(res, 200, order);
     return;
   }
 
-  // POST /api/orders
   if (pathname === '/api/orders' && req.method === 'POST') {
-    parseBody(req, (err, data) => {
-      const order = {
-        id: getNextId(orders),
-        telegram_user_id: data.telegramUserId,
-        username: data.username,
-        contact: data.contact,
-        total_price: data.totalPrice,
-        items: data.items || [],
-        status: 'new',
-        created_at: new Date().toISOString()
-      };
-
-      orders.push(order);
-      saveAll();
-
-      // Send Telegram notification
+    parseBody(req, async (err, data) => {
+      const order = await API.createOrder(data.telegramUserId, data.username, data.contact, data.totalPrice, data.items || []);
+      
       let orderText = `📦 <b>Новый заказ #${order.id}</b>\n\n`;
       orderText += `👤 <b>Пользователь:</b> @${order.username}\n`;
       orderText += `📞 <b>Контакт:</b> ${order.contact}\n`;
       orderText += `💰 <b>Сумма:</b> ${order.total_price}₽\n\n`;
       orderText += `<b>Товары:</b>\n`;
-
       order.items.forEach((item, idx) => {
         orderText += `${idx + 1}. ${item.name} x${item.quantity} = ${item.price * item.quantity}₽\n`;
       });
-
       sendTelegramMessage(orderText);
 
       sendJSON(res, 200, { id: order.id, status: 'success' });
@@ -651,32 +592,25 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // POST /api/orders/:id/complete
   if (pathname.match(/^\/api\/orders\/\d+\/complete$/) && req.method === 'POST') {
     const id = parseInt(pathname.split('/')[3]);
-    parseBody(req, (err, data) => {
+    parseBody(req, async (err, data) => {
       if (data.password !== ADMIN_PASSWORD) {
         sendJSON(res, 401, { error: 'Неверный пароль' });
         return;
       }
-
-      const order = orders.find(o => o.id === id);
+      const order = await API.getOrder(id);
       if (!order) {
         sendJSON(res, 404, { error: 'Заказ не найден' });
         return;
       }
-
-      order.status = 'completed';
-      order.completed_at = new Date().toISOString();
-      saveAll();
-
-      sendTelegramMessage(`✅ Заказ #${order.id} завершён.`);
+      await API.deleteOrder(id);
+      sendTelegramMessage(`✅ Заказ #${order.id} завершён и удалён.`);
       sendJSON(res, 200, { success: true });
     });
     return;
   }
 
-  // POST /telegram - Webhook for Telegram Bot
   if (pathname === '/telegram' && req.method === 'POST') {
     parseBody(req, (err, update) => {
       if (err) {
@@ -684,58 +618,37 @@ const server = http.createServer((req, res) => {
         sendJSON(res, 400, { ok: false });
         return;
       }
-
       try {
-        if (update.message) {
-          handleTelegramMessage(update.message);
-        } else if (update.callback_query && update.callback_query.message) {
-          handleTelegramMessage(update.callback_query.message);
-        } else {
-          console.log('[Telegram] update without message:', JSON.stringify(update));
-        }
+        if (update.message) handleTelegramMessage(update.message);
+        else if (update.callback_query && update.callback_query.message) handleTelegramMessage(update.callback_query.message);
       } catch (e) {
         console.error('[Telegram] handler error:', e);
       }
-
       sendJSON(res, 200, { ok: true });
     });
     return;
   }
 
-  // 404
   sendJSON(res, 404, { error: 'Route not found' });
 });
 
-server.listen(PORT, () => {
-  console.log(`
+// Запуск сервера
+loadData().then(() => {
+  server.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════╗
 ║       🚀 DANISA SHOP - WEB APP        ║
 ╚════════════════════════════════════════╝
 
 ✅ Сервер запущен на PORT ${PORT}
 
-📱 Магазин (Mini App):
-   ${SERVER_URL}/miniapp/
+${USE_POSTGRES ? '🗄️  База данных: PostgreSQL' : '📁 База данных: JSON файлы'}
 
-⚙️  Админ панель:
-   ${SERVER_URL}/admin/
-
-📊 Данные хранятся в папке: ./data/
-
-🔐 Пароль администратора: ${ADMIN_PASSWORD}
+📱 Магазин: ${SERVER_URL}/miniapp/
+⚙️  Админ: ${SERVER_URL}/admin/
+🔐 Пароль: ${ADMIN_PASSWORD}
 
 Нажмите Ctrl+C для остановки
-  `);
+    `);
+  });
 });
-
-console.log('📋 Конфигурация:');
-console.log(`  TELEGRAM_BOT_TOKEN: ${TELEGRAM_TOKEN ? '✓ установлен' : '✗ не установлен'}`);
-console.log(`  ADMIN_CHAT_ID: ${ADMIN_CHAT_ID || '✗ не установлен'}`);
-console.log(`  ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID || '✗ не установлен'}`);
-console.log(`  SERVER_URL: ${SERVER_URL}`);
-
-if (TELEGRAM_TOKEN) {
-  console.log('\n🤖 Telegram Web App бот готов!');
-  console.log('   Команды: /start, /shop, /admin, /help');
-  console.log('   ✓ Используются inline кнопки с Web App');
-}

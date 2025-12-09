@@ -252,12 +252,11 @@
 
       <div class="tab-content" id="ordersTab">
         <div class="section">
-          <h2>Новые заказы</h2>
+          <h2>Активные заказы</h2>
           <div id="newOrdersList"><div class="loading">Загрузка...</div></div>
-        </div>
-        <div class="section">
-          <h2>История заказов</h2>
-          <div id="completedOrdersList"><div class="loading">Загрузка...</div></div>
+          <p style="font-size: 12px; color: var(--gray); margin-top: 12px;">
+            💡 После нажатия "Завершить заказ" заказ будет удален из списка
+          </p>
         </div>
       </div>
     </div>
@@ -281,7 +280,7 @@
     async function createProd(){const sId=document.getElementById('prodSub').value,n=document.getElementById('prodName').value.trim(),d=document.getElementById('prodDesc').value.trim(),p=parseFloat(document.getElementById('prodPrice').value);if(!sId||!n||!p){showError('Заполните все поля');return;}try{const r=await fetch('/api/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subcategoryId:sId,name:n,description:d,price:p,password:adminPassword,imageData:uploadedImageData})});if(r.ok){document.getElementById('prodName').value='';document.getElementById('prodDesc').value='';document.getElementById('prodPrice').value='';document.getElementById('prodImage').value='';document.getElementById('imagePreview').style.display='none';uploadedImageData=null;showSuccess('Добавлено');loadAll();}}catch(e){showError('Ошибка');}}
     function renderProds(){const e=document.getElementById('prodsList');if(prods.length===0){e.innerHTML='<div class="loading">Нет товаров</div>';return;}e.innerHTML=prods.map(p=>{const s=subs.find(x=>x.id===parseInt(p.subcategory_id));return`<div class="item"><div class="item-info"><div class="item-name">${p.name}</div><div class="item-meta">${s?.name||'?'} • ${p.price}₽</div>${p.main_image?`<img src="${p.main_image}" class="preview-img">`:''}</div><div class="item-actions"><button class="del-btn" onclick="delProd(${p.id})">Удалить</button></div></div>`;}).join('');}
     async function delProd(id){if(!confirm('Удалить?'))return;try{const r=await fetch(`/api/products/${id}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Удалено');loadAll();}}catch(e){}}
-    function renderOrders(){const newEl=document.getElementById('newOrdersList'),compEl=document.getElementById('completedOrdersList');const newOrders=allOrders.filter(o=>o.status==='new'),completedOrders=allOrders.filter(o=>o.status==='completed');if(newOrders.length===0)newEl.innerHTML='<div class="loading">Нет новых заказов</div>';else newEl.innerHTML=newOrders.map(o=>renderOrder(o,true)).join('');if(completedOrders.length===0)compEl.innerHTML='<div class="loading">История пуста</div>';else compEl.innerHTML=completedOrders.map(o=>renderOrder(o,false)).join('');}
+    function renderOrders(){const newEl=document.getElementById('newOrdersList');const newOrders=allOrders.filter(o=>o.status==='new');if(newOrders.length===0)newEl.innerHTML='<div class="loading">Нет активных заказов</div>';else newEl.innerHTML=newOrders.map(o=>renderOrder(o,true)).join('');}
     function renderOrder(o,showBtn){return`<div class="order"><div class="order-head"><span class="order-id">Заказ #${o.id}</span><span class="order-status ${o.status}">${o.status==='new'?'Новый':'Завершён'}</span></div><div class="order-info"><div class="order-info-item"><div class="order-info-label">Пользователь</div><strong>@${o.username}</strong></div><div class="order-info-item"><div class="order-info-label">Контакт</div><strong>${o.contact}</strong></div><div class="order-info-item"><div class="order-info-label">Сумма</div><strong>${o.total_price}₽</strong></div></div><div class="order-items"><strong>Товары:</strong>${renderOrderItems(o.items)}</div><div style="font-size: 11px; color: var(--gray); margin-top: 8px;">${new Date(o.created_at).toLocaleString('ru-RU')}</div>${showBtn?`<button class="complete-btn" onclick="completeOrder(${o.id})">Завершить заказ</button>`:''}</div>`;}
     function renderOrderItems(items){try{if(typeof items==='string')items=JSON.parse(items);if(Array.isArray(items))return items.map((x,i)=>`<div class="order-item">${i+1}. ${x.name} x${x.quantity} = ${x.price*x.quantity}₽</div>`).join('');return'<div class="order-item">Нет товаров</div>';}catch{return'<div class="order-item">Ошибка</div>';}}
     async function completeOrder(id){if(!confirm('Завершить заказ?'))return;try{const r=await fetch(`/api/orders/${id}/complete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPassword})});if(r.ok){showSuccess('Заказ завершён');loadAll();}}catch(e){showError('Ошибка');}}

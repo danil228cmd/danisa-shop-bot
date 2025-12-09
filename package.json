@@ -1,7 +1,7 @@
 {
   "name": "danisa-shop-bot",
   "version": "1.0.0",
-  "description": "Telegram Mini App Shop Bot (БЕЗ ЗАВИСИМОСТЕЙ - ТОЛЬКО ВСТРОЕННЫЕ МОДУЛИ)",
+  "description": "Telegram Mini App Shop Bot",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,5 +10,7 @@
   "keywords": ["telegram", "bot", "miniapp", "shop"],
   "author": "",
   "license": "MIT",
-  "dependencies": {}
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
 }
